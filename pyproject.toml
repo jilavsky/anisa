@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=77.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anisa"
+version = "0.1.0.dev0"
+description = "Small-angle scattering modelling of anisotropic particle populations (successor of Igor AnisoSAS)."
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Jan Ilavsky", email = "ilavsky@anl.gov"}
+]
+maintainers = [
+    {name = "Jan Ilavsky", email = "ilavsky@anl.gov"}
+]
+keywords = [
+    "SAXS", "SANS", "USAXS", "small-angle scattering", "anisotropy",
+    "spheroids", "orientation distribution", "X-ray scattering",
+    "neutron scattering", "SAS",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = [
+    # numpy.trapezoid requires NumPy >= 2.0 (same floor as pyIrena and Bernardyn).
+    "numpy>=2.0",
+    "scipy>=1.8.0",
+    "h5py>=3.0.0",
+    # Data input goes through pyIrena's public, Qt-free reader (pyirena.io.scattering),
+    # so Anisa reads exactly what pyIrena reads. Same <2 cap as Bernardyn.
+    "pyirena>=1.2.1,<2",
+]
+
+[project.optional-dependencies]
+gui = [
+    # PySide6 pin is the intersection of pyIrena (!=6.7.*, !=6.10.*) and Bernardyn
+    # (>=6.8, !=6.9.1) so `pip install anisa[gui]` never forces a Qt change in an
+    # existing pyIrena or Bernardyn environment. PySide6 only — never PyQt6.
+    "PySide6>=6.8,!=6.9.1,!=6.10.*",
+    "pyqtgraph>=0.13.7",
+    # Reused pyIrena plotting and file-loading widgets (pyirena.gui.sas_plot, data_loading).
+    "pyirena[qtplot]>=1.2.1,<2",
+]
+mcp = [
+    # Planned (PLAN.md Phase 8). Same <2.0 cap as pyIrena/Bernardyn: mcp 2.0 removed
+    # mcp.server.fastmcp.
+    "mcp>=1.0.0,<2.0",
+    "matplotlib>=3.5.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-timeout",
+    "ruff",
+    "build",
+    "twine",
+]
+all = [
+    "anisa[gui]",
+    "anisa[mcp]",
+    "anisa[dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/jilavsky/anisa"
+Repository = "https://github.com/jilavsky/anisa"
+Changelog = "https://github.com/jilavsky/anisa/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/jilavsky/anisa/issues"
+
+# [project.scripts] — anisa-gui, anisa, anisa-mcp are added as each surface is implemented
+# (PLAN.md Phases 4, 7, 8); declaring them earlier would install broken commands.
+
+[tool.setuptools.packages.find]
+include = ["anisa*"]
+
+[tool.setuptools.package-data]
+anisa = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = ["performance: timing benchmarks, not run by default in CI"]
+timeout = 300
+timeout_method = "thread"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["Igor source", "build", "temp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# E741 stays off permanently: I (intensity), l (level), Q are physics notation.
+ignore = ["E501", "E741", "E701", "E702", "E402"]
+
+[tool.ruff.lint.per-file-ignores]
+"anisa/**/__init__.py" = ["F401"]

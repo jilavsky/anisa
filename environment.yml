@@ -1,0 +1,37 @@
+name: anisa
+
+# Same install architecture as pyIrena (see pyirena/environment.yml):
+#
+# conda installs Python + the compiled scientific stack only.
+# pip (the `-e ".[gui,dev]"` line below) installs PySide6, shiboken6, pyqtgraph
+# and pyIrena. Do NOT add pyside6/shiboken6/pyqtgraph as conda dependencies:
+# mixing conda-built and pip-built Qt6 binaries in one env breaks on Windows.
+#
+# Python is capped <3.14 (house standard) until compiled binding wheels catch up.
+#
+# Working on pyIrena at the same time? After creating the env run
+#   pip install -e ../pyirena[qtplot]
+# so Anisa uses your sibling checkout instead of the PyPI release.
+
+channels:
+  - conda-forge
+  # Anaconda's `defaults` channel is excluded on purpose (its terms of service
+  # differ from conda-forge); everything needed is on conda-forge.
+  - nodefaults
+
+dependencies:
+  - python>=3.10,<3.14
+
+  # Core scientific stack
+  - numpy>=2.0
+  - scipy>=1.8
+  - h5py>=3.0
+
+  # Development / testing
+  - pytest>=7.0
+  - pytest-cov
+
+  - pip
+  - pip:
+      # Pulls pyirena (PyPI), PySide6, pyqtgraph, ruff, pytest-timeout
+      - -e ".[gui,dev]"

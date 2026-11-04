@@ -1,0 +1,40 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Test / coverage / lint caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Environments
+.env
+.venv
+venv/
+
+# IDEs / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Local scratch (large or private data, experiments)
+/temp/
+
+# A. J. Allen's 2001 theory notes: shared before, but kept local in this repo (Jan, 2026-11-04)
+/Igor source/Theory AnisoSAS.*
+
+# Claude memory
+.claude/
