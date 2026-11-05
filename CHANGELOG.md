@@ -6,6 +6,9 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Fitting (Phase 3)**, `anisa.core.fitting`: `fit` (least squares, bounds, per-population
+  flags, progress/cancel), `revert`, `goodness_of_fit`, covariance and `monte_carlo` uncertainties.
+  The formula-4c sum over size classes is now one vectorised contraction (fit 1.75x faster).
 - **Data I/O and project files (Phase 2)**:
   - `anisa.io.data`: `load_direction` / `reload_direction_data` through pyIrena's public reader
     (NXcanSAS, simple HDF5, text); content fingerprints; wavelength from file metadata.

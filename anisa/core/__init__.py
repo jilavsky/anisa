@@ -14,9 +14,23 @@ Typical use::
     q = np.geomspace(1e-4, 0.1, 200)
     result = Engine().evaluate(model, [q, q])
     result.directions[0].intensity        # I(Q) in 1/cm along the first direction
+
+Fitting (parameters with ``fit_spec(path).fit = True``; data in ``Direction.q`` etc.)::
+
+    from anisa.core import fit
+    result = fit(model)                   # model now holds the best parameters
+    result.reduced_chi_squared, [(p.parameter.label, p.value, p.std) for p in result.parameters]
 """
 
 from anisa.core.engine import DirectionResult, Engine, ModelResult, calculate
+from anisa.core.fitting import (
+    FitResult,
+    FitStatistics,
+    fit,
+    goodness_of_fit,
+    monte_carlo,
+    revert,
+)
 from anisa.core.model import (
     AnisaModel,
     CalcSettings,
@@ -34,10 +48,16 @@ __all__ = [
     "Direction",
     "DirectionResult",
     "Engine",
+    "FitResult",
     "FitSpec",
+    "FitStatistics",
     "ModelResult",
     "OrientationDistribution",
     "Population",
     "SizeDistribution",
     "calculate",
+    "fit",
+    "goodness_of_fit",
+    "monte_carlo",
+    "revert",
 ]

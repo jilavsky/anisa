@@ -426,6 +426,18 @@ class Engine:
             k_nodes, h = _bin_on_k(beta, x, weights, k_node_count(settings, span))
 
         out = np.zeros(q.size)
+        if settings.formula == "4c":
+            # Closed form: the sum over size classes and K nodes is one contraction,
+            #   I = 1e8 drho^2 sum_{r,k} v_r V_r h_k A^2(Q R_r K_k),
+            # with no Python loop over the (up to a few hundred) radius classes.
+            weight = PER_ANGSTROM_TO_PER_CM * delta_rho**2 * share * spheroid_volume(radii, beta)
+            rows = max(1, _CHUNK_ELEMENTS // (radii.size * k_nodes.size))
+            for start in range(0, q.size, rows):
+                sl = slice(start, start + rows)
+                x = q[sl, None, None] * radii[None, :, None] * k_nodes[None, None, :]
+                out[sl] = np.einsum("qrk,r,k->q", sphere_amplitude_sq(x), weight, h)
+            return out
+
         rows = max(1, _CHUNK_ELEMENTS // k_nodes.size)
         for radius, v in zip(radii, share, strict=True):
             prefactor = PER_ANGSTROM_TO_PER_CM * v / float(spheroid_volume(radius, beta))

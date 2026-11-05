@@ -8,8 +8,8 @@ of the Igor Pro AnisoSAS macros (theory: A. J. Allen, NIST 2001). Compared with 
 version it is faster, uses multiple cores, and has no fixed limit on the number of directions
 or populations.
 
-> **Status: early development (pre-alpha).** The calculation engine, data input and project
-> files are done and tested; fitting, the GUI, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
+> **Status: early development (pre-alpha).** The calculation engine, data input, project
+> files and fitting are done and tested; the GUI, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
 > for the plan and progress.
 
 Anisa is part of the pyIrena family:
@@ -64,8 +64,13 @@ python -m anisa.demo demo_data            # NXcanSAS files + demo.anisa.json (th
 ```
 
 ```python
+from anisa.core import fit
 from anisa.io.project import load_project
-model = load_project("demo_data/demo.anisa.json")   # settings + data, read back through pyIrena
+
+model = load_project("demo_data/demo_start.anisa.json")   # perturbed start, fit flags set
+result = fit(model)                                        # model now holds the best parameters
+for p in result.parameters:
+    print(p.parameter.label, p.value, "+-", p.std)
 ```
 
 ## Units

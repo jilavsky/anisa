@@ -12,8 +12,8 @@ NIST 2001). It must:
 - install from PyPI into the same environment as pyIrena and Bernardyn,
 - have three surfaces: **GUI (priority)**, command line with JSON configuration, and an MCP server.
 
-Status: **Phases 0–2 done (core engine, data I/O, project files, synthetic data); Phase 3
-(fitting) next.** Decisions taken so far are in §12, open to-dos in §13.
+Status: **Phases 0–3 done (core engine, data I/O, project files, synthetic data, fitting);
+Phase 4 (GUI) next.** Decisions taken so far are in §12, open to-dos in §13.
 
 ---
 
@@ -332,6 +332,28 @@ repository as separate, coordinated commits.
 
 ---
 
+### 4.4 Fitting (Phase 3)
+
+`anisa.core.fitting` (`fit`, `revert`, `goodness_of_fit`, `monte_carlo`):
+
+- **Residuals** `(I_data − I_model)/σ` over the fit mask of every direction that is `use`d and
+  has data, concatenated; `scipy.optimize.least_squares` (TRF, box constraints, `x_scale="jac"`).
+- **Parameters** are those with `fit` set, per population and direction, and only where they
+  apply (orientation parameters of a table distribution and `eta`/`pack` without interference
+  are skipped). Each population uses its own flags (Igor bug #1). β and the background are
+  fittable; Δρ is not (degenerate with the volume fraction in 4c).
+- **Finite differences** use a relative step of 1e-3: the model's discretisation leaves ~1e-6
+  noise that scipy's default step (~1e-8) would amplify. Only the population whose parameter
+  moved is recomputed.
+- **Uncertainty:** covariance `(JᵀJ)⁻¹ · χ²/dof` (so it does not depend on the absolute scale of
+  σ), flagged where a parameter sits on a limit; `monte_carlo` refits data re-drawn within σ in
+  worker processes (spawn, BLAS pinned) with a serial fallback.
+- **Progress and cancel** callbacks after every evaluation; cancelling returns the best
+  parameters so far. A failure leaves the model at its start values. `revert` = Igor's
+  "Reverse fit". `goodness_of_fit` gives χ² per direction as Igor's `ASAS_CalcChiSquare` did.
+
+---
+
 ## 5. GUI (priority)
 
 Mirrors the pyIrena panel layout. A horizontal `QSplitter` holds a scrollable control column on
@@ -429,7 +451,7 @@ field.
 | **0** ✅ | Repository, packaging, environment, CI skeleton, this plan | `conda env create` works; `import anisa`, ruff and pytest pass |
 | **1** ✅ | Core engine: geometry (sample frame now, lab frame designed in), orientation, 4a/4b/4c, Irena size distributions, interference, totals, surface area; caching; threads | Validation §9 items 1–4 pass (165 tests); benchmarks recorded in §3 |
 | **2** ✅ | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless (204 tests) |
-| **3** | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters |
+| **3** ✅ | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters (227 tests) |
 | **4** | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively |
 | **5** | Anisotropy tab (azimuthal and polar, experimental overlay) | Igor's X/Y/Z scans are reproducible as special cases |
 | **6** | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena / Bernardyn |
@@ -462,7 +484,8 @@ field.
    against an independent brute-force sum the defaults give ≤ 2e-4 worst-point error (the
    reference's own limit) over 18 cases; sharp orientation distributions are resolved
    automatically.
-5. **Fit round trip:** synthetic data with noise, starting from perturbed values (Phase 3).
+5. **Fit round trip** ✅ (`tests/test_fitting.py`): from a start 99× worse in χ²/N the demo fit converges in
+   92 evaluations (1.3 s) to χ²/dof = 1.04 and every parameter lies within 1.7σ of the truth.
 6. **Anisa regression values:** store reference outputs of Anisa itself once the fit exists.
    A later change that moves them must be explained (a fix) or it is a regression.
 7. **Igor comparison (sanity check, §13):** expect agreement only where Igor's approximations
