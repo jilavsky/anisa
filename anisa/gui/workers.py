@@ -14,6 +14,7 @@ import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from anisa.core.anisotropy import AnisotropyResult, AnisotropyScan, calculate_scan
 from anisa.core.engine import Engine, ModelResult
 from anisa.core.fitting import (
     FitResult,
@@ -31,6 +32,7 @@ log = logging.getLogger(__name__)
 __all__ = [
     "CalcOutput",
     "TaskThread",
+    "anisotropy_job",
     "calculation_job",
     "fit_job",
     "monte_carlo_job",
@@ -115,5 +117,14 @@ def monte_carlo_job(model: AnisaModel, result: FitResult, n_runs: int, seed: int
             progress=lambda done, total: thread.progress.emit(int(done), float(total)),
             cancel=lambda: thread.cancelled,
         )
+
+    return job
+
+
+def anisotropy_job(model: AnisaModel, scan: AnisotropyScan, engine: Engine):
+    """Model along one azimuthal scan; returns an :class:`AnisotropyResult`."""
+
+    def job(thread: TaskThread) -> AnisotropyResult:
+        return calculate_scan(model, scan, engine)
 
     return job

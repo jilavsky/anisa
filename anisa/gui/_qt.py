@@ -66,6 +66,7 @@ QScrollArea = QtWidgets.QScrollArea
 QSizePolicy = QtWidgets.QSizePolicy
 QSpinBox = QtWidgets.QSpinBox
 QSplitter = QtWidgets.QSplitter
+QStackedWidget = QtWidgets.QStackedWidget
 QStatusBar = QtWidgets.QStatusBar
 QTabWidget = QtWidgets.QTabWidget
 QTableWidget = QtWidgets.QTableWidget
@@ -136,6 +137,7 @@ __all__ = [
     "QSizePolicy",
     "QSpinBox",
     "QSplitter",
+    "QStackedWidget",
     "QStatusBar",
     "QTabWidget",
     "QTableWidget",

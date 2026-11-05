@@ -56,6 +56,7 @@ from anisa.gui._qt import (
     QVBoxLayout,
     QWidget,
 )
+from anisa.gui.anisotropy_tab import AnisotropyTab, default_q_values
 from anisa.gui.directions_panel import CurveChooserDialog, DirectionsPanel, SettingsPanel
 from anisa.gui.plots import IQPlotWidget, OrientationPlotWidget
 from anisa.gui.population_editor import PopulationsPanel
@@ -63,6 +64,7 @@ from anisa.gui.state import UserState
 from anisa.gui.workers import (
     CalcOutput,
     TaskThread,
+    anisotropy_job,
     calculation_job,
     fit_job,
     monte_carlo_job,
@@ -97,6 +99,9 @@ class MainWindow(QMainWindow):
         self._calc_pending = False
         self._fit_thread: TaskThread | None = None
         self._mc_thread: TaskThread | None = None
+        self._aniso_thread: TaskThread | None = None
+        self._aniso_pending = False
+        self._aniso_stale = True
         self._threads: list[TaskThread] = []
 
         self.resize(1480, 900)
@@ -106,6 +111,10 @@ class MainWindow(QMainWindow):
         self._calc_timer.setSingleShot(True)
         self._calc_timer.setInterval(120)
         self._calc_timer.timeout.connect(self.calculate)
+        self._aniso_timer = QTimer(self)
+        self._aniso_timer.setSingleShot(True)
+        self._aniso_timer.setInterval(150)
+        self._aniso_timer.timeout.connect(self.calculate_anisotropy)
         self._enable_drops()
         self._restore_window_state()
         self._update_title()
@@ -194,7 +203,9 @@ class MainWindow(QMainWindow):
         font.setFamily("Menlo, Consolas, monospace")
         font.setStyleHint(font.StyleHint.Monospace)
         self.log_view.setFont(font)
+        self.anisotropy_tab = AnisotropyTab(self.model.scans)
         self.tabs.addTab(self.iq_plot, "I(Q)")
+        self.tabs.addTab(self.anisotropy_tab, "Anisotropy")
         self.tabs.addTab(self.orientation_plot, "Orientation")
         self.tabs.addTab(self.log_view, "Log")
         splitter.addWidget(self.tabs)
@@ -218,6 +229,9 @@ class MainWindow(QMainWindow):
         self.settings_panel.display_changed.connect(self._refresh_plots)
         self.settings_panel.auto_update.toggled.connect(self._auto_update_toggled)
         self.iq_plot.cursors_applied.connect(self._apply_cursor_range)
+        self.tabs.currentChanged.connect(self._tab_changed)
+        self.anisotropy_tab.changed.connect(self._scans_edited)
+        self.anisotropy_tab.selection_changed.connect(self._schedule_anisotropy)
         self.calculate_button.clicked.connect(self.calculate)
         self.fit_button.clicked.connect(self.start_fit)
         self.revert_button.clicked.connect(self.revert_fit)
@@ -364,6 +378,7 @@ class MainWindow(QMainWindow):
         if recalc:
             self._clear_errors()
             self._schedule_calculation()
+            self._schedule_anisotropy()
 
     def _on_structure_changed(self) -> None:
         self._set_dirty()
@@ -372,6 +387,7 @@ class MainWindow(QMainWindow):
         self._refresh_buttons()
         self._refresh_plots()
         self._schedule_calculation()
+        self._schedule_anisotropy()
 
     def _on_direction_selected(self, index: int) -> None:
         if 0 <= index < len(self.model.directions):
@@ -413,6 +429,7 @@ class MainWindow(QMainWindow):
         self.directions_panel.set_directions(self.model.directions)
         self.populations_panel.set_populations(self.model.populations)
         self.settings_panel.set_settings(self.model.settings)
+        self.anisotropy_tab.set_scans(self.model.scans)
         self._refresh_buttons()
         self._refresh_plots()
 
@@ -507,6 +524,67 @@ class MainWindow(QMainWindow):
             self._schedule_calculation()
 
     # ==========================================================================================
+    # anisotropy scans
+    # ==========================================================================================
+
+    def _anisotropy_visible(self) -> bool:
+        return self.tabs.currentWidget() is self.anisotropy_tab
+
+    def _tab_changed(self, _index: int) -> None:
+        if self._anisotropy_visible() and self._aniso_stale:
+            self.calculate_anisotropy()
+
+    def _scans_edited(self) -> None:
+        self._set_dirty()
+        self._schedule_anisotropy()
+
+    def _schedule_anisotropy(self) -> None:
+        """The scan result is out of date; recompute now if the tab is showing, else on demand."""
+        self._aniso_stale = True
+        if self._anisotropy_visible():
+            self._aniso_timer.start()
+
+    def _ensure_default_scan(self) -> None:
+        """Offer a first scan once there are data: three Q values across the measured range."""
+        if not self.model.scans and any(d.q is not None for d in self.model.directions):
+            was_dirty = self.dirty
+            self.anisotropy_tab.add_scan(default_q_values(self.model))
+            self._set_dirty(was_dirty)  # an automatic scan is not a user edit
+
+    def calculate_anisotropy(self) -> None:
+        """Calculate the selected scan (worker thread)."""
+        self._aniso_timer.stop()
+        scan = self.anisotropy_tab.current_scan()
+        if scan is None:
+            self._aniso_stale = False
+            self.anisotropy_tab.update_result(None, self.model)
+            return
+        if self._aniso_thread is not None:
+            self._aniso_pending = True
+            return
+        self._reap_threads()
+        self._aniso_stale = False
+        thread = TaskThread(
+            anisotropy_job(copy.deepcopy(self.model), copy.deepcopy(scan), self.engine)
+        )
+        thread.done.connect(lambda result: self.anisotropy_tab.update_result(result, self.model))
+        thread.failed.connect(self._anisotropy_failed)
+        thread.finished.connect(self._anisotropy_finished)
+        self._aniso_thread = thread
+        self._threads.append(thread)
+        thread.start()
+
+    def _anisotropy_failed(self, message: str) -> None:
+        self.log(f"Anisotropy calculation failed: {message}")
+        self.anisotropy_tab.message.setText(f"calculation failed: {message}")
+
+    def _anisotropy_finished(self) -> None:
+        self._aniso_thread = None
+        if self._aniso_pending:
+            self._aniso_pending = False
+            self._schedule_anisotropy()
+
+    # ==========================================================================================
     # fit, revert, uncertainty
     # ==========================================================================================
 
@@ -563,6 +641,7 @@ class MainWindow(QMainWindow):
         self._show_errors(result)
         self._set_dirty()
         self.calculate()
+        self._schedule_anisotropy()
         self.statusBar().showMessage(
             f"Fit {'cancelled' if result.cancelled else 'finished'}: χ²/dof = {result.reduced_chi_squared:.4g}",
             8000,
@@ -604,6 +683,7 @@ class MainWindow(QMainWindow):
         self._refresh_buttons()
         self.log("Reverted to the parameters before the fit")
         self.calculate()
+        self._schedule_anisotropy()
 
     def start_uncertainty(self) -> None:
         if self.last_fit is None or self._busy():
@@ -711,6 +791,7 @@ class MainWindow(QMainWindow):
                     self.model.settings.wavelength = wavelength
                     self.settings_panel.refresh()
                 self._reset_views()
+            self._ensure_default_scan()
             self._on_structure_changed()
 
     def _choose_curve(self, path: str):
@@ -760,6 +841,7 @@ class MainWindow(QMainWindow):
         self._refresh_all()
         self._clear_errors()
         self.calculate()
+        self._schedule_anisotropy()
 
     def open_project_dialog(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -799,7 +881,9 @@ class MainWindow(QMainWindow):
                 "Project opened with warnings", "\n".join(str(w.message) for w in caught)
             )
         self.log(f"Opened {self.project_path}")
+        self._ensure_default_scan()
         self.calculate()
+        self._schedule_anisotropy()
         return True
 
     def save_project(self, save_as: bool = False) -> bool:
@@ -887,6 +971,7 @@ class MainWindow(QMainWindow):
     def shutdown_threads(self) -> None:
         """Stop and wait for every background job (used on close and by the tests)."""
         self._calc_timer.stop()
+        self._aniso_timer.stop()
         for thread in list(self._threads):
             thread.cancel()
         for thread in list(self._threads):

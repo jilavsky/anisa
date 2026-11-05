@@ -6,6 +6,9 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Anisotropy view (Phase 5)**: `anisa.core.anisotropy` (scans of α_Q or ω_Q at any number of Q
+  values, saved in the project; measured cuts that lie on a scan path are interpolated and
+  overlaid) and an Anisotropy tab with polar and I(angle) views. 35 more tests (290 in total).
 - **GUI (Phase 4)**, `anisa-gui`: main window with a directions table, population tabs (parameters
   with fit flags, limits and errors, size distribution, orientation tables, interference), I(Q)
   with residuals and fit-range cursors, orientation-distribution plots, fit log, project

@@ -481,3 +481,141 @@ def test_user_state_survives_corrupt_and_unwritable_files(tmp_path):
     unwritable.path = tmp_path / "file.txt" / "s.json"
     (tmp_path / "file.txt").write_text("x")
     unwritable.add_recent_project(tmp_path / "p.json")  # must not raise
+
+
+# -- anisotropy tab ---------------------------------------------------------------------------
+
+from anisa.core.anisotropy import AnisotropyScan, calculate_scan  # noqa: E402
+from anisa.gui.anisotropy_tab import (  # noqa: E402
+    AnisotropyTab,
+    default_q_values,
+    parse_q_values,
+    polar_xy,
+)
+
+
+def test_polar_xy_puts_zero_degrees_to_the_right_counter_clockwise():
+    x, y = polar_xy(np.array([0.0, 90.0, 180.0, 270.0]), np.array([2.0, 2.0, 2.0, 2.0]))
+    np.testing.assert_allclose(x, [2, 0, -2, 0], atol=1e-12)
+    np.testing.assert_allclose(y, [0, 2, 0, -2], atol=1e-12)
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("0.01", (0.01,)),
+        ("0.001, 0.01 ; 0.1", (0.001, 0.01, 0.1)),
+        ("1e-3 2e-3", (0.001, 0.002)),
+        ("", None),
+        ("0.01, abc", None),
+        ("0.01, -1", None),
+        ("0, 0.1", None),
+        ("inf", None),
+    ],
+)
+def test_q_values_are_parsed_strictly(text, expected):
+    assert parse_q_values(text) == expected
+
+
+def test_default_q_values_span_the_measured_range():
+    assert default_q_values(AnisaModel()) == (0.002, 0.01)  # no data: fixed fallback
+    model = demo.synthesize(demo.demo_model())
+    low, mid, high = default_q_values(model)
+    assert 1e-4 < low < mid < high < 0.08
+
+
+def test_anisotropy_tab_edits_the_scans_in_place(qapp):
+    scans: list[AnisotropyScan] = []
+    tab = AnisotropyTab(scans)
+    seen = []
+    tab.changed.connect(lambda: seen.append(len(scans)))
+    assert not tab.sweep.isEnabled() and tab.current_scan() is None  # nothing to edit yet
+    tab.add_scan((0.004,))
+    assert len(scans) == 1 and scans[0].q_values == (0.004,) and tab.sweep.isEnabled()
+    assert (scans[0].sweep, scans[0].fixed) == ("alpha", 0.0)  # through the normal: not flat
+    tab.sweep.setCurrentIndex(tab.sweep.findData("alpha"))
+    assert scans[0].sweep == "alpha" and tab.fixed_label.text() == "ω_Q ="
+    tab.fixed.setText("30")
+    tab.fixed.editingFinished.emit()
+    assert scans[0].fixed == 30.0
+    tab.points.setValue(37)
+    assert scans[0].n_points == 37
+    tab.q_text.setText("0.001, 0.02")
+    tab.q_text.editingFinished.emit()
+    assert scans[0].q_values == (0.001, 0.02)
+    tab.q_text.setText("rubbish")
+    tab.q_text.editingFinished.emit()
+    assert scans[0].q_values == (0.001, 0.02) and tab.q_text.text() == "0.001, 0.02"  # rejected
+    assert "ω_Q = 30" in tab.scan_box.itemText(0)  # the list title follows the edit
+    tab.duplicate_scan()
+    assert len(scans) == 2 and scans[1] == scans[0] and scans[1] is not scans[0]
+    tab.remove_scan()
+    tab.remove_scan()
+    assert scans == [] and not tab.remove_button.isEnabled()
+    assert seen[0] == 1 and seen[-1] == 0
+
+
+def test_anisotropy_tab_draws_polar_and_linear_views(qapp):
+    model = demo.synthesize(demo.demo_model(), seed=1)
+    scan = AnisotropyScan("", "alpha", 0.0, (0.003, 0.01, 0.03))
+    model.scans = [scan]
+    tab = AnisotropyTab(model.scans)
+    tab.update_result(calculate_scan(model, scan), model)
+    assert len(tab.polar_view.ci.items) == 3  # one polar plot per Q
+    tab.view.setCurrentIndex(tab.view.findData("linear"))
+    assert len(tab.linear_view.ci.items) == 1 and tab.stack.currentIndex() == 1
+    plot = next(iter(tab.linear_view.ci.items))
+    assert (
+        len(plot.listDataItems()) == 3 + 3
+    )  # three model curves and three sets of measured points
+    tab.show_data.setChecked(False)
+    assert len(next(iter(tab.linear_view.ci.items)).listDataItems()) == 3
+    # a result for another scan is not drawn
+    tab.update_result(calculate_scan(model, AnisotropyScan("", "omega", 45.0, (0.01,))), model)
+    assert len(tab.linear_view.ci.items) == 0
+    many = AnisotropyScan("", "omega", 90.0, tuple(np.geomspace(0.001, 0.03, 9)))
+    model.scans[0] = many
+    tab.view.setCurrentIndex(tab.view.findData("polar"))
+    tab.update_result(calculate_scan(model, many), model)
+    assert len(tab.polar_view.ci.items) == 6 and "first 6 of 9" in tab.message.text()
+
+
+def test_window_computes_the_scan_when_the_tab_is_shown(qapp, window, demo_project):
+    open_start(qapp, window, demo_project)
+    assert len(window.model.scans) == 1 and not window.dirty  # automatic default, not an edit
+    assert window.anisotropy_tab._result is None  # nothing computed while the tab is hidden
+    window.tabs.setCurrentWidget(window.anisotropy_tab)
+    assert wait_until(qapp, lambda: window.anisotropy_tab._result is not None)
+    result = window.anisotropy_tab._result
+    assert result.intensity.shape == (3, 73) and result.scan == window.model.scans[0]
+    assert len(window.anisotropy_tab.polar_view.ci.items) == 3
+
+
+def test_editing_the_model_refreshes_the_visible_scan(qapp, window, demo_project):
+    open_start(qapp, window, demo_project)
+    window.tabs.setCurrentWidget(window.anisotropy_tab)
+    assert wait_until(qapp, lambda: window.anisotropy_tab._result is not None)
+    before = window.anisotropy_tab._result.intensity.copy()
+    row = window.populations_panel.editors[1].particle.row("radius")
+    row.value.setText("3000")
+    row.value.editingFinished.emit()
+    assert wait_until(
+        qapp, lambda: not np.allclose(window.anisotropy_tab._result.intensity, before, rtol=1e-3)
+    )
+    assert wait_until(qapp, lambda: window._aniso_thread is None and not window._aniso_pending)
+
+
+def test_scan_edits_mark_the_project_dirty_and_are_saved(qapp, window, demo_project, tmp_path):
+    open_start(qapp, window, demo_project)
+    window.anisotropy_tab.add_scan((0.005, 0.015))
+    assert window.dirty and len(window.model.scans) == 2
+    path = tmp_path / "with_scans.anisa.json"
+    window.project_path = path
+    assert window.save_project()
+    assert load_project(path).scans == window.model.scans
+
+
+def test_adding_data_creates_a_default_scan(qapp, window, demo_project):
+    assert window.model.scans == []
+    window.add_data_files([str(demo_project / "demo_dir01.h5")])
+    assert len(window.model.scans) == 1 and len(window.model.scans[0].q_values) == 3

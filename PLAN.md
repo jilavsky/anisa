@@ -12,8 +12,8 @@ NIST 2001). It must:
 - install from PyPI into the same environment as pyIrena and Bernardyn,
 - have three surfaces: **GUI (priority)**, command line with JSON configuration, and an MCP server.
 
-Status: **Phases 0–4 done (core engine, data I/O, project files, synthetic data, fitting,
-GUI).** Decisions taken so far are in §12, open to-dos in §13.
+Status: **Phases 0–5 done (core engine, data I/O, project files, synthetic data, fitting,
+GUI, anisotropy view). Next: Phase 6 (results file).** Decisions taken so far are in §12, open to-dos in §13.
 
 ---
 
@@ -417,9 +417,32 @@ recover the parameters, before real data is available.
 - **Threads:** calculations and fits run on a snapshot of the model in a `QThread`; the editing
   panels are disabled during a fit; the model refreshes automatically after each edit (120 ms
   debounce) unless "Update automatically" is off.
-- **Not yet in the GUI:** the anisotropy (azimuthal / polar) tab (Phase 5), saving results to HDF5
-  (Phase 6), the 3D microstructure views (Phase 12). Errors of directions' backgrounds appear in
+- **Anisotropy tab (Phase 5):** see §5.2.
+- **Not yet in the GUI:** saving results to HDF5 (Phase 6), the 3D microstructure views (Phase 12). Errors of directions' backgrounds appear in
   the fit report in the Log tab, not next to the table.
+
+### 5.2 Anisotropy tab (Phase 5)
+
+`anisa.core.anisotropy` (`AnisotropyScan`, `calculate_scan`, `measured_points`), tab
+`anisa/gui/anisotropy_tab.py`.
+
+- A **scan** sweeps ω_Q over 0–360° at fixed α_Q, or α_Q at fixed ω_Q, at any number of fixed |Q|
+  values. Igor's X, Y and Z orientations are the scans (ω sweep, α_Q fixed), (α sweep, ω_Q = 0)
+  and (α sweep, ω_Q = 90°); any number of scans, Q values and points are allowed (Igor: 3 × 6 and
+  32 points). Scans are saved in the project.
+- **Views:** polar plots (one per Q, the first six) and I(angle) on a log axis; optional dashed
+  lines per population.
+- **Measured overlay without a new file format.** A measured direction is a cut along
+  (α_Q, ω_Q), so the cuts of a data set sample I(angle) at fixed Q wherever they lie on a scan
+  path (within 1°). Each loaded direction is interpolated at the scan's Q (log-log), its
+  background subtracted, and drawn at its angle and, since I(Q) = I(−Q), at the opposite
+  direction. Igor needed separately prepared azimuthal profiles for this.
+- The scan is computed in a background job only while the tab is visible (about one engine call
+  per angle), and again after any edit, fit or revert. The first scan (through the sample normal,
+  where textured samples show their anisotropy) is created automatically when data are loaded.
+- **Checks** (`tests/test_anisotropy.py`): an axially symmetric sample is flat in ω; I(angle) =
+  I(angle + 180°); a scan point equals a direct engine evaluation of the same direction; and the
+  model passes through the measured cuts at their angles within the noise.
 
 ---
 
@@ -478,7 +501,7 @@ field.
 | **2** ✅ | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless (204 tests) |
 | **3** ✅ | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters (227 tests) |
 | **4** ✅ | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively (255 tests) |
-| **5** | Anisotropy tab (azimuthal and polar, experimental overlay) | Igor's X/Y/Z scans are reproducible as special cases |
+| **5** ✅ | Anisotropy tab (azimuthal and polar, measured overlay) | Igor's X/Y/Z scans are reproducible as special cases (290 tests) |
 | **6** | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena / Bernardyn |
 | — | **Milestone: testing release for Jan with real data** | |
 | 7 | `anisa.api`, CLI, JSON batch | Same result headless as in the GUI |

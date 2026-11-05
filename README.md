@@ -9,7 +9,7 @@ version it is faster, uses multiple cores, and has no fixed limit on the number 
 or populations.
 
 > **Status: early development (pre-alpha).** The calculation engine, data input, project
-> files, fitting and the GUI are done and tested; the anisotropy plots, result files, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
+> files, fitting and the GUI are done and tested; result files, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
 > for the plan and progress.
 
 Anisa is part of the pyIrena family:
@@ -50,6 +50,9 @@ anisa-gui                      # or: python -m anisa.gui
 3. Set the particle parameters of each population, tick **Fit?** for those to vary, and press
    **Fit**. The errors appear next to the fitted values; *Uncertainty…* refits re-drawn data for a
    Monte-Carlo estimate; *Revert fit* returns to the values before the fit.
+4. The **Anisotropy** tab shows the model as a function of the direction of Q (polar plots, or
+   I(angle)) with your measured cuts on top, which is the quickest check that the orientation
+   distributions make sense.
 
 ## Example
 

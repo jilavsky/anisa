@@ -430,6 +430,7 @@ class AnisaModel:
     directions: list[Direction] = field(default_factory=list)
     populations: list[Population] = field(default_factory=list)
     settings: CalcSettings = field(default_factory=CalcSettings)
+    scans: list = field(default_factory=list)  # list[AnisotropyScan], see anisa.core.anisotropy
 
     def to_dict(self) -> dict:
         return {
@@ -437,6 +438,7 @@ class AnisaModel:
             "settings": self.settings.to_dict(),
             "directions": [d.to_dict() for d in self.directions],
             "populations": [p.to_dict() for p in self.populations],
+            "scans": [s.to_dict() for s in self.scans],
         }
 
     @classmethod
@@ -446,4 +448,11 @@ class AnisaModel:
             directions=[Direction.from_dict(d) for d in data.get("directions", [])],
             populations=[Population.from_dict(p) for p in data.get("populations", [])],
             settings=CalcSettings.from_dict(data.get("settings")),
+            scans=[_scan_from_dict(x) for x in data.get("scans", [])],
         )
+
+
+def _scan_from_dict(data: dict):
+    from anisa.core.anisotropy import AnisotropyScan  # deferred: anisotropy imports this module
+
+    return AnisotropyScan.from_dict(data)
