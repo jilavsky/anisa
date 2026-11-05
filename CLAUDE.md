@@ -13,7 +13,12 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
   absent in fresh clones). Equation numbers (1)–(7) are used in docstrings.
 
 ## Layout
-- `anisa/core` — numpy/scipy only. `anisa/io` — data via `pyirena.io`, JSON, HDF5.
+- `anisa/core` — numpy/scipy only (plus `pyirena.core.distributions` for size distributions).
+  `engine.py` is the calculation engine (its module docstring explains the algorithms);
+  `model.py` the dataclasses. `anisa/io` — data via `pyirena.io`, JSON, HDF5 (Phase 2+).
+- `benchmarks/` — `convergence.py` (accuracy against an independent brute force) and
+  `performance.py`. Re-run both after any change to the engine's numerics.
+- `docs/parameters.md` — Igor ↔ Anisa parameter mapping.
 - `anisa/gui` — PySide6, imported only through `anisa/gui/_qt.py`.
 - Tests are in `tests/`. `tests/test_package.py` enforces the layering and the Qt-import rule.
 
@@ -24,6 +29,13 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
   check. Anisa's own analytic, convergence and regression tests (PLAN.md §9) are the reference:
   a change that moves them must be an explained fix.
 - No hard limits on the number of directions, populations or Q values.
+- **Grid sizes in `CalcSettings` are lower bounds.** The engine raises them to resolve the form
+  factor and the orientation distribution. Weights are normalised on the grid, so an
+  under-resolved sharp distribution does not fail, it silently gets broader: never remove the
+  `required_nodes` floor, and test any new distribution type for it.
+- Tests compare against independent references (brute force, scipy quadrature, analytic
+  limits), not against the engine's own output. Tolerances are tied to a stated accuracy target
+  (1e-4 relative at the worst Q point); tighten the code, not the tolerance, if they fail.
 - GUI labels keep the Igor parameter names (Radius, Volume Fract, Beta, Delta rho,
   P alpha par 1…). JSON keys are snake_case; the mapping is in PLAN.md §4.1.
 - Reuse pyIrena (`pyirena.io`, `pyirena.gui.sas_plot`, `fit_metrics`, `setup_config`) before

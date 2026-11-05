@@ -12,8 +12,8 @@ NIST 2001). It must:
 - install from PyPI into the same environment as pyIrena and Bernardyn,
 - have three surfaces: **GUI (priority)**, command line with JSON configuration, and an MCP server.
 
-Status: **Phase 0 (repository and environment) done; Phase 1 next.** Decisions taken so far
-are in §12, open to-dos in §13.
+Status: **Phases 0 and 1 done (core engine); Phase 2 (data I/O, project JSON, synthetic data)
+next.** Decisions taken so far are in §12, open to-dos in §13.
 
 ---
 
@@ -29,6 +29,7 @@ are in §12, open to-dos in §13.
 **Later**
 - Command line and JSON batch runs, MCP server for agents (Aida).
 - Bernardyn package export, launching from pyIrena.
+- 3D visualisation of the fitted microstructure: particle shapes and orientation maps (§14).
 - Direct modelling of 2D detector images.
 
 **Data:** desmeared (pinhole-like) 1D cuts only for now. On USAXS that means 2D-collimated
@@ -131,15 +132,17 @@ parameters, Anisa results can therefore differ from Igor.
 
 | # | Where | Igor behaviour | Anisa |
 |---|---|---|---|
-| 1 | `ASAS_FitCreateParametersWvs` | Uses `Pop1_UsePAlphaParam` / `Pop1_UseBOmegaParam` for *every* population | Each population uses its own flags |
-| 2 | `ASAS_CalcOneMterm` | Formula 4b reads `GammWv`, but the line creating it is commented out in `ASAS_Initialize`, so 4b cannot run | Correct implementation (scipy `gamma`, `jv`); validated against 4a for β<1 |
-| 3 | `ASAS_CalcIntOf1Scatterer` | Lookup-table size from a heuristic; N>400 becomes 300, but 300<N≤400 is kept | F evaluated on an X grid fine enough to resolve its oscillations (node count from QR₀\|β−1\|) |
-| 4 | 4c size distribution | Normalising by Σcᵢ gives I = φ Σwᵢ Vᵢ Fᵢ / (V₀ Σ wᵢ/Vᵢ), which does not conserve volume fraction for broad distributions | Volume-weighted: I = φΔρ² Σ wᵢVᵢPᵢ with Σwᵢ = 1, for every distribution |
+| 1 | `ASAS_FitCreateParametersWvs` | Uses `Pop1_UsePAlphaParam` / `Pop1_UseBOmegaParam` for *every* population | Each population uses its own flags (Phase 3) |
+| 2 | `ASAS_CalcOneMterm`, theory eq. 4b | Formula 4b reads `GammWv`, but the line creating it is commented out in `ASAS_Initialize`, so 4b cannot run. **Also, the series itself is wrong**: Allen's printed (4b) and the Igor code lack the `1/m!` that follows from expanding `1 - exp(i y)` in (4a) (Sonine's finite integral). Without it the series is off by ~10 % at ν₀ = 0.24 and diverges for c = βν₀/K > 1 | Series with the `1/m!`, equal to 4a to ~1e-12 (`tests/test_formfactor.py`); entries with c > 10 fall back to 4a, where the terms cancel catastrophically |
+| 3 | `ASAS_CalcIntOf1Scatterer` | Lookup-table size from a heuristic; N>400 becomes 300, but 300<N≤400 is kept | K grid with `points_per_period` nodes per 2π of form-factor phase, cubic binning (error ∝ nodes⁻⁴); the orientation grid is refined to resolve the same phase |
+| 4 | 4c size distribution | Normalising by Σcᵢ gives I = φ Σwᵢ Vᵢ Fᵢ / (V₀ Σ wᵢ/Vᵢ), which does not conserve volume fraction for broad distributions | Volume-weighted: I = 1e8 φ Δρ² Σ vᵢ Vᵢ ⟨A²⟩ with Σ vᵢ = 1, for every distribution |
 | 5 | Lookup smoothing | Binomial smoothing over X averages away oscillations (hidden polydispersity) | No smoothing; polydispersity comes only from the explicit size distribution |
-| 6 | Gauss size distribution | "FWHM" is the 1/e half-width; range truncated at ±0.75 of it | Irena distributions from `pyirena.core.distributions` (Gauss, log-normal, Schulz–Zimm, LSW, Ardell), with Irena parameter names and radius grids; triangular kept for continuity |
-| 7 | Background | Subtracted from data, not fitted | Part of the model, fittable |
-| 8 | `ASAS_Initialize` | `RadiusMax` defaults to 1000, the same as Radius (the comment says 10000) | Sensible defaults |
-| 9 | Integration | Rectangle sum including both ω endpoints (0 and 2π) | Periodic grid in ω; α quadrature with the sin α weight (Gauss–Legendre in cos α or midpoint), chosen by convergence tests. Distributions normalised on the same quadrature, so Σ W = 1 exactly |
+| 6 | Size distributions | Triangle of 9 points, or a "Gauss" whose FWHM is the 1/e half-width, truncated at ±0.75 of it | Irena distributions from `pyirena.core.distributions` (Gauss, log-normal, Schulz–Zimm, LSW, Ardell) with Irena parameter names. **The triangular distribution is dropped** (it was an ad hoc 9-point sum, not a distribution users chose for its shape); say so if you want it back |
+| 7 | Background | Subtracted from data, not fitted | Part of the model, fittable (Phase 3) |
+| 8 | `ASAS_Initialize` | `RadiusMax` defaults to 1000, the same as Radius (the comment says 10000) | Sensible defaults (`DEFAULT_LIMITS`) |
+| 9 | Integration | Rectangle sum including both ω endpoints (0 and 2π); α, ω steps fixed by the user (90, 200) | ω: periodic mid-point rule. α: Gauss–Legendre in cos α (exact for the sin α measure). Weights normalised on the grid (Σ W = 1 exactly). Grid sizes are lower bounds, raised automatically (items 3 and 11) |
+| 10 | Size integration (found in Phase 1) | n/a in Igor (9 or ≤51 points). Irena's *equal-probability* radius grid, if reused as a quadrature, converges only to first order: with 25 classes a polydisperse sphere population was wrong by up to 50 % at high Q, and by 1 % even with 400 | Uniform mid-point grid in R (spectral on smooth distributions); class count raised with Q (Nyquist rule), default minimum `n_bins` = 100; formula 4c + size distribution uses a convolution in ln(R K), see §3 |
+| 11 | Orientation resolution (found in Phase 1) | The weights are normalised on the grid, so a peak narrower than the node spacing silently becomes a broader one (par2 = 20000 at the pole was ~7× too wide with 64 nodes). Igor's fixed 90 α-steps have the same limit | `AngularDistribution.required_nodes`: α ≈ 14√par2 at the pole (Gauss–Legendre is sparsest there), ≈ 3√par2/sin α₀ off the pole, ω ≈ 3√par2, tables 16 per bin. Checked in `tests/test_orientation_resolution.py` |
 
 **Consequence for users of the Igor version:** with a narrow size distribution, Anisa shows
 form-factor oscillations that Igor's smoothing (item 5) removed. Refitting old Igor results may
@@ -163,33 +166,57 @@ every Jacobian column of a fit.
 - **The 4a/4b form factor.** It depends on Q, R₀, β, ν₀ and X, but **not on the direction**.
   It can be computed once per population and shared by all directions with the same Q grid.
 
-**Prototype measurement** (this Mac, numpy, formula 4c, Igor-default grids, 300 Q points,
-1 direction × 1 population, `/tmp` benchmark):
+**Implemented in Phase 1** (`anisa/core/engine.py`), in the order of their effect:
+1. **K binning.** The cross section depends on the orientation only through K, so the
+   orientation weights are binned once onto K nodes (cubic rule) and each Q point costs one short
+   dot product. A cubic rule reaches the accuracy of a linear one with ~4× fewer nodes.
+2. **Log-space convolution** (4c with a size distribution). The 4c cross section depends on
+   radius and orientation only through R·K, so with u = ln(R K) the two densities convolve and
+   `I(Q) = Σ ρ(u) A²(Q eᵘ)`: n_R + n_K evaluations per Q instead of n_R · n_K.
+3. **Q bands** (factor 4 in Q): each band is computed at the resolution its own largest Q needs,
+   so low Q does not pay for high-Q resolution.
+4. **Caching** with single-flight computation: weights per population, cos η per direction,
+   intensity shape per (direction, population, settings). Volume fraction and interference are
+   applied afterwards, so a change in either recomputes nothing. Grid sizes are quantised so a
+   fit that nudges a radius keeps hitting the cache.
+5. **Threads** (`ThreadPoolExecutor`) over independent (direction × population) tasks.
+   Gauss–Legendre nodes come from `scipy.special.roots_legendre` (6× faster than numpy's at
+   n ≈ 1000) and are cached.
 
-| Variant | Time | Agreement with exact Igor algorithm |
+**Accuracy** (`benchmarks/convergence.py`, `tests/test_engine.py`): against an independent
+brute-force orientation sum, the defaults give a worst-point relative error ≤ 2e-4 and a median
+≤ 1.5e-5 over 18 shape/size/sharpness cases. The ~1e-4 plateau is the reference's own limit (it
+moves by 3e-4 when its grid is doubled). Isotropic averages agree with an independent
+4000-node quadrature to 1e-4, and with `pyirena.core.form_factors.spheroid_ff` to 2e-3 (that
+function uses 50 nodes). Polydisperse spheres agree with scipy quadrature to 1e-4.
+
+**Measured speed** (`benchmarks/performance.py`; Apple-silicon laptop-class Mac, 18 CPUs, formula
+4c, 300 Q points, defaults):
+
+| Scenario | Cold | Cached |
 |---|---|---|
-| Straight numpy port of the Igor algorithm | ~40 ms | (reference) |
-| Weights binned once onto 4001 fixed X nodes | ~21 ms | 7e-6 relative |
-| Same, 1001 nodes | ~19 ms | 9e-5 relative |
+| 1 direction × 1 population, monodisperse | 2 ms | 0.01 ms |
+| 1 × 1, Gauss size distribution | 6 ms | 0.05 ms |
+| 6 × 3, Gauss, typical sizes (R = 200–520 Å) | 58 ms | 0.7 ms |
+| **15 × 5, Gauss, typical sizes** | **340 ms** (720 ms on 1 thread) | 1.9 ms |
+| 15 × 5, monodisperse, large sizes (R up to 2100 Å, Q to 0.1) | 400 ms | 1.8 ms |
+| 15 × 5, Gauss, large sizes (orientation grids of ~1.4 M nodes) | 940 ms (2.3 s on 1 thread) | 2.0 ms |
+| 15 × 5 Gauss, after changing one volume fraction | | 2.3 ms |
 
-The remaining time is a Python loop over Q; vectorising it is the next step. The Igor run time
-for the same case is the speed baseline, recorded with the Igor reference data (§13).
+Both targets below are met. The large-size case is close to the limit: its cost is the
+orientation grid, which grows as (Q R |β − 1|)², and it scales on a few threads only (it is
+memory-bound), so a machine with fewer cores will be slower there. The Igor time for the same
+cases is the baseline still to be recorded (§13).
 
-**Parallel strategy, in order of use:**
-1. **Numpy vectorisation** — most of the gain, with no overhead.
-2. **`ThreadPoolExecutor` over independent (direction × population) blocks.** Numpy and scipy
-   release the GIL in large array operations; there is no pickling and it is safe inside the GUI.
-3. **`ProcessPoolExecutor`** (spawn context, BLAS pinned to one thread, as in
-   `pyirena/core/modeling.py`) for Monte-Carlo uncertainty runs and later 2D images.
-4. **Fit Jacobian:** each fitted parameter belongs to one population, so a finite-difference
-   column only recomputes that population. Columns run in parallel.
-5. **Caching:** each population result is keyed by a hash of exactly the inputs it depends on
-   (replacing Igor's every-5th-point string compare). Changes to volume fraction alone rescale.
+**Not done, on purpose:**
+- **Numba** is not used anywhere in the pyIrena family and would be a new dependency. Consider
+  it only if a later benchmark falls short, and ask first.
+- **`ProcessPoolExecutor`** (spawn, BLAS pinned, as in `pyirena/core/modeling.py`) is for
+  Monte-Carlo uncertainty runs (Phase 3) and later 2D images (§10).
+- **Fit Jacobian:** each fitted parameter belongs to one population, so a finite-difference
+  column recomputes only that population; the cache already provides this (Phase 3).
 
-**Numba** is not used anywhere in the pyIrena family and would be a new dependency. Consider it
-only if benchmarks after steps 1–5 still fall short, and ask first.
-
-**Performance targets** (formula 4c, default integration grids):
+**Performance targets** (formula 4c, default grids), both met:
 - 1 direction × 1 population × 300 Q points: ≤ 10 ms.
 - 15 directions × 5 populations: < 1 s per full model evaluation, so auto-update stays usable.
 
@@ -308,6 +335,7 @@ the left (≈ 400–460 px) and graph tabs on the right. Settings persist as JSO
     and a number of points.
   - Shown as linear I(angle) plots and as polar plots drawn in pyqtgraph.
   - Experimental I(angle) can be overlaid, optionally scaled to the model.
+- **Microstructure** (later, Phase 12, §14): 3D particle shape and orientation map per population.
 
 Calculations and fits run in a `QThread` worker with progress and cancel, so the window stays
 responsive. Igor's "Reverse fit" becomes "Revert fit", with the same behaviour.
@@ -369,7 +397,7 @@ field.
 | Phase | Content | Done when |
 |---|---|---|
 | **0** ✅ | Repository, packaging, environment, CI skeleton, this plan | `conda env create` works; `import anisa`, ruff and pytest pass |
-| **1** | Core engine: geometry (sample frame now, lab frame designed in), orientation, 4a/4b/4c, Irena size distributions, interference, totals, surface area; caching; threads | Validation §9 items 1–3 pass; convergence tests set the default grids; benchmark recorded |
+| **1** ✅ | Core engine: geometry (sample frame now, lab frame designed in), orientation, 4a/4b/4c, Irena size distributions, interference, totals, surface area; caching; threads | Validation §9 items 1–4 pass (165 tests); benchmarks recorded in §3 |
 | **2** | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless |
 | **3** | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters |
 | **4** | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively |
@@ -381,27 +409,37 @@ field.
 | 9 | Bernardyn package export; launch from pyIrena (needs a small pyIrena plugin hook) | — |
 | 10 | 2D detector images (research, §10) | — |
 | 11 | Slit-smeared anisotropic data (research, §11) | A forward model validated on synthetic data |
+| 12 | Microstructure visualisation: 3D particle shapes, orientation maps (§14) | Shape and map shown per population, updating with the model |
 
 ---
 
 ## 9. Validation
 
-1. **Analytic limits**
+1. **Analytic limits** ✅ (`tests/test_engine.py`)
    - β = 1 with any orientation distribution gives the sphere form factor × φΔρ²V for every
      direction.
    - An isotropic distribution with any β gives the same result for every direction, and it
-     must match `pyirena.core.form_factors.spheroid_ff`.
-2. **Formula consistency:** 4a → 4c as ν₀ → 0; 4b = 4a where the series converges (β < 1).
-3. **Normalisation:** Σ W = 1 exactly for every orientation distribution, and Σ wᵢ = 1 for
+     matches an independent quadrature (1e-4) and `pyirena.core.form_factors.spheroid_ff` (2e-3,
+     limited by that function's 50 nodes).
+   - Aligned particles: Q along or across the axis gives A²(QRβ) or A²(QR).
+   - Polydisperse spheres match scipy quadrature over radius (1e-4).
+2. **Formula consistency** ✅ (`tests/test_formfactor.py`): 4a → 4c as ν₀ → 0; 4b (with the `1/m!`)
+   = 4a to 1e-9 for c up to 24, falling back to 4a above c = 10; the printed 4b is shown to be
+   wrong.
+3. **Normalisation** ✅: Σ W = 1 exactly for every orientation distribution, and Σ vᵢ = 1 for
    every size distribution.
-4. **Convergence:** results stop changing as the α, ω and X grids are refined; the defaults are
-   the coarsest grids within a stated tolerance (e.g. 1e-4 relative).
-5. **Fit round trip:** synthetic data with noise, starting from perturbed values.
-6. **Anisa regression values:** once items 1–5 pass, store reference outputs of Anisa itself.
+4. **Convergence** ✅ (`benchmarks/convergence.py`, `tests/test_orientation_resolution.py`):
+   against an independent brute-force sum the defaults give ≤ 2e-4 worst-point error (the
+   reference's own limit) over 18 cases; sharp orientation distributions are resolved
+   automatically.
+5. **Fit round trip:** synthetic data with noise, starting from perturbed values (Phase 3).
+6. **Anisa regression values:** store reference outputs of Anisa itself once the fit exists.
    A later change that moves them must be explained (a fix) or it is a regression.
 7. **Igor comparison (sanity check, §13):** expect agreement only where Igor's approximations
    are small (broad size distributions, fine grids); document the differences.
-8. **Performance regression test** (marked, not run by default in CI).
+8. **Performance regression test** (marked, not run by default in CI): the benchmark script
+   exists (`benchmarks/performance.py`); a pytest `performance` marker test with a generous
+   limit is still to be added.
 
 ---
 
@@ -482,3 +520,53 @@ not.
 - [ ] **Real user data** (Jan): desmeared multi-direction data sets with known sample
       orientations.
 - [ ] **pyIrena public API:** list the pyIrena internals Anisa uses (Phase 4) and promote them.
+
+---
+
+## 14. Visualisation of the fitted microstructure (later, Phase 12)
+
+Added 2026-11-05 at Jan's request. This is **not part of the model**, so it comes after the
+testing release. It shows users what a fit means: for each population the particle shape, and
+how its symmetry axis is distributed over orientations. Written down now so the core and GUI
+keep the hooks it needs.
+
+**1. Particle shape (3D).** For each population, a spheroid with radii R₀, R₀, βR₀ and its
+symmetry axis along the sample z axis, so oblate (β<1) and prolate (β>1) shapes are obvious.
+- Size distribution: show several semi-transparent shapes (e.g. the 10th, 50th and 90th
+  percentile radius), or one shape plus a size-histogram inset.
+- Population colour is shared with the I(Q) and orientation plots.
+- Optional "ensemble" view: a few hundred particles drawn at random from p(α)·b(ω), scaled to
+  the volume fraction. Illustrative only, not a simulation, and labelled as such.
+
+**2. Orientation map.** The probability density of the symmetry axis over the unit sphere,
+P(α,ω) = p(α)·b(ω):
+- **Colour map on a sphere** (3D, rotatable). Axes are undirected, so the model covers the
+  upper hemisphere (α ∈ 0…π/2) and the map is mirrored to the lower one.
+- **Pole figure / stereographic projection** (2D, like a texture map), drawn in pyqtgraph. It
+  needs no VTK, so it works everywhere, and it can go into Bernardyn exports and reports.
+- The measured Q directions (α_Q, ω_Q) of all data sets can be drawn on top as arrows or
+  markers, which shows at a glance which orientations the data actually probe.
+- Axes of the sample frame (z = substrate normal) are drawn, as in the orientation tab.
+
+**3. Where it lives.**
+- `core` provides only data, with no VTK: shape parameters, the density P(α,ω) on a sphere
+  grid (same normalised quadrature as the engine), and the percentile radii.
+- `gui` builds the meshes: a "Microstructure" tab with a population selector, a shape view,
+  and a map view with a 3D/pole-figure switch.
+- **3D toolkit:** PyVista + pyvistaqt + VTK, as in pyIrena's SAXS Morph viewer
+  (`pyirena/gui/saxs_morph_3d.py`: `Voxel3DViewer`, `make_popout_button`, `HAS_PYVISTA`).
+  They are imported lazily. Without VTK the tab shows an install hint and the 2D pole
+  figure, as pyIrena does.
+- New optional extra `anisa[gui3d]`, mirroring `pyirena[gui3d]`
+  (`pyvista>=0.45`, `pyvistaqt>=0.11`, `vtk>=9.3`). **Dependencies need Jan's OK before they
+  are added**, and the pins must be checked against pyIrena's extra so the shared environment
+  stays installable.
+- **Reuse (policy §4.2):** the lazy-import wrapper and the popout helper in pyIrena are
+  internal. Promote them to public pyIrena API instead of copying them.
+
+**4. Decide when we get there**
+- Does the map show density per solid angle (P(α,ω)) or per α (including sin α)? The first is
+  the natural one for comparing with a pole figure.
+- Colour scale: shared across populations, or normalised per population?
+- Export: PNG of each view, the pole figure as a Bernardyn plot, and possibly a 3D scene file.
+- Whether the ensemble view is worth including, given it can be over-read as a real structure.
