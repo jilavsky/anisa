@@ -12,8 +12,8 @@ NIST 2001). It must:
 - install from PyPI into the same environment as pyIrena and Bernardyn,
 - have three surfaces: **GUI (priority)**, command line with JSON configuration, and an MCP server.
 
-Status: **Phases 0–3 done (core engine, data I/O, project files, synthetic data, fitting);
-Phase 4 (GUI) next.** Decisions taken so far are in §12, open to-dos in §13.
+Status: **Phases 0–4 done (core engine, data I/O, project files, synthetic data, fitting,
+GUI).** Decisions taken so far are in §12, open to-dos in §13.
 
 ---
 
@@ -396,6 +396,31 @@ responsive. Igor's "Reverse fit" becomes "Revert fit", with the same behaviour.
 from known parameters (with noise). The GUI can then be checked end to end, and a fit must
 recover the parameters, before real data is available.
 
+### 5.1 As built (Phase 4)
+
+`anisa-gui [project.anisa.json]` (or `python -m anisa.gui`). Modules in `anisa/gui/`:
+`main_window` (window, menus, workflow), `directions_panel` (table + settings), `population_editor`
+(tabs, orientation table dialog), `plots` (I(Q) + residuals, orientation distributions),
+`widgets` (number field, parameter grid), `workers` (threads), `state` (recent files, layout).
+
+- **Left:** directions table (use, label, α_Q, ω_Q, background, fit bkg, Q min/max, points used), a
+  collapsible settings box, population tabs (add / duplicate / remove, any number), buttons
+  Calculate, Fit, Revert fit, Uncertainty…, and a progress bar with Cancel.
+- **Right:** I(Q) with all directions in their own colour (hollow symbols = outside the Q range),
+  model lines, dashed lines for the selected population, residuals below, fit-range cursors
+  ("Use cursors as Q range"); an Orientation tab (p(α), b(ω) of every population); a Log tab with
+  fit reports. Plots come from pyIrena's `make_sas_plot`, so they have its R = π/Q axis, export
+  menu and zoom preservation.
+- **Workflow:** *Add data…* (or drag files in) → set α_Q, ω_Q of each direction → set population
+  parameters and tick *Fit?* → *Fit*. *File → Create demo data…* writes the synthetic data set and
+  opens a perturbed start so every feature can be tried without data.
+- **Threads:** calculations and fits run on a snapshot of the model in a `QThread`; the editing
+  panels are disabled during a fit; the model refreshes automatically after each edit (120 ms
+  debounce) unless "Update automatically" is off.
+- **Not yet in the GUI:** the anisotropy (azimuthal / polar) tab (Phase 5), saving results to HDF5
+  (Phase 6), the 3D microstructure views (Phase 12). Errors of directions' backgrounds appear in
+  the fit report in the Log tab, not next to the table.
+
 ---
 
 ## 6. Saving results (format approved 2026-11-04)
@@ -452,7 +477,7 @@ field.
 | **1** ✅ | Core engine: geometry (sample frame now, lab frame designed in), orientation, 4a/4b/4c, Irena size distributions, interference, totals, surface area; caching; threads | Validation §9 items 1–4 pass (165 tests); benchmarks recorded in §3 |
 | **2** ✅ | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless (204 tests) |
 | **3** ✅ | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters (227 tests) |
-| **4** | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively |
+| **4** ✅ | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively (255 tests) |
 | **5** | Anisotropy tab (azimuthal and polar, experimental overlay) | Igor's X/Y/Z scans are reproducible as special cases |
 | **6** | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena / Bernardyn |
 | — | **Milestone: testing release for Jan with real data** | |

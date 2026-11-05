@@ -55,6 +55,7 @@ __all__ = [
     "goodness_of_fit",
     "monte_carlo",
     "revert",
+    "statistics_from_result",
 ]
 
 #: Relative finite-difference step (see the module docstring).
@@ -152,6 +153,44 @@ class FitResult:
     @property
     def degrees_of_freedom(self) -> int:
         return self.n_points - self.n_parameters
+
+    def report(self, direction_labels: list[str] | None = None) -> str:
+        """Plain-text summary: status, chi-squared, every parameter (start -> fit +- error) and
+        chi-squared per direction. ``direction_labels`` names the directions (default Dir 1 ...)."""
+        state = (
+            "cancelled" if self.cancelled else ("converged" if self.success else "NOT converged")
+        )
+        lines = [
+            f"Fit {state}: {self.message}",
+            f"{self.n_points} points, {self.n_parameters} parameters, "
+            f"{self.n_evaluations} evaluations, {self.elapsed_seconds:.1f} s",
+            f"chi2 = {self.chi_squared:.6g}, chi2/dof = {self.reduced_chi_squared:.4g}",
+            "",
+        ]
+        width = max((len(p.parameter.label) for p in self.parameters), default=0)
+        for p in self.parameters:
+            error = f" +- {p.std:.3g}" if np.isfinite(p.std) else ""
+            flag = (
+                "  [at lower limit]" if p.at_lower else ("  [at upper limit]" if p.at_upper else "")
+            )
+            if self.monte_carlo is not None:
+                k = self.parameters.index(p)
+                if np.isfinite(self.monte_carlo.std[k]):
+                    error += f"  (Monte Carlo +- {self.monte_carlo.std[k]:.3g})"
+            lines.append(
+                f"  {p.parameter.label:<{width}}  {p.start:.6g} -> {p.value:.6g}{error}{flag}"
+            )
+        stats = self.statistics
+        lines += ["", "chi2 per point by direction:"]
+        for i, n in enumerate(stats.direction_points):
+            if n:
+                name = (
+                    direction_labels[i]
+                    if direction_labels and direction_labels[i]
+                    else f"Dir {i + 1}"
+                )
+                lines.append(f"  {name}: {stats.direction_reduced(i):.4g}  ({n} points)")
+        return "\n".join(lines)
 
     def start_values(self) -> list[float]:
         return [p.start for p in self.parameters]
@@ -310,6 +349,36 @@ def goodness_of_fit(model: AnisaModel, engine: Engine | None = None) -> FitStati
     return FitStatistics(
         chi_squared=float(sum(c for c in chi if c is not None)),
         n_points=problem.n_points,
+        direction_chi_squared=tuple(chi),
+        direction_points=tuple(points),
+    )
+
+
+def statistics_from_result(model: AnisaModel, result) -> FitStatistics:
+    """Chi-squared of an already evaluated model (``result`` from ``Engine.evaluate`` at each
+    direction's own measured Q), without evaluating it again.
+
+    Directions without data, not in use, or evaluated on a different Q grid are left out.
+    """
+    n = len(model.directions)
+    chi: list[float | None] = [None] * n
+    points = [0] * n
+    for i, (direction, calc) in enumerate(zip(model.directions, result.directions, strict=False)):
+        if not direction.use or direction.q is None or direction.intensity is None:
+            continue
+        if direction.uncertainty is None or calc.q.shape != np.shape(direction.q):
+            continue
+        mask = direction.fit_mask()
+        if not mask.any():
+            continue
+        z = (np.asarray(direction.intensity)[mask] - calc.intensity[mask]) / np.asarray(
+            direction.uncertainty
+        )[mask]
+        chi[i] = float(np.dot(z, z))
+        points[i] = int(z.size)
+    return FitStatistics(
+        chi_squared=float(sum(c for c in chi if c is not None)),
+        n_points=sum(points),
         direction_chi_squared=tuple(chi),
         direction_points=tuple(points),
     )

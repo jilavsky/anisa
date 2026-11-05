@@ -9,7 +9,7 @@ version it is faster, uses multiple cores, and has no fixed limit on the number 
 or populations.
 
 > **Status: early development (pre-alpha).** The calculation engine, data input, project
-> files and fitting are done and tested; the GUI, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
+> files, fitting and the GUI are done and tested; the anisotropy plots, result files, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
 > for the plan and progress.
 
 Anisa is part of the pyIrena family:
@@ -36,6 +36,20 @@ pip install -e ".[gui]"
 ```
 
 Python 3.10–3.13. The GUI uses PySide6 (never PyQt6).
+
+## Using the GUI
+
+```bash
+anisa-gui                      # or: python -m anisa.gui
+```
+
+1. *File → Create demo data…* writes a synthetic data set with known parameters and opens it
+   with perturbed starting values; press **Fit** to see it recover them. (Or *Add data…* /
+   drag files onto the directions table to load your own: NXcanSAS HDF5 or text.)
+2. Give each direction its angles α_Q (from the sample normal) and ω_Q (azimuth) in the table.
+3. Set the particle parameters of each population, tick **Fit?** for those to vary, and press
+   **Fit**. The errors appear next to the fitted values; *Uncertainty…* refits re-drawn data for a
+   Monte-Carlo estimate; *Revert fit* returns to the values before the fit.
 
 ## Example
 

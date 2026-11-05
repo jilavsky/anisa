@@ -83,3 +83,21 @@ def test_qt_shim_loads_pyside6(monkeypatch):
     assert _qt.QT_BINDING == "PySide6"
     app = _qt.QApplication.instance() or _qt.QApplication([])
     assert app is not None
+
+
+def test_declared_console_scripts_resolve_to_callables():
+    """A script declared in pyproject.toml must point at something that exists."""
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:  # pragma: no cover - Python 3.10
+        tomllib = pytest.importorskip("tomli")
+    with open(REPO / "pyproject.toml", "rb") as fh:
+        scripts = tomllib.load(fh)["project"].get("scripts", {})
+    assert "anisa-gui" in scripts
+    for name, target in scripts.items():
+        module_name, _, function = target.partition(":")
+        source = REPO / (module_name.replace(".", "/") + ".py")
+        assert source.exists(), f"{name}: {source} does not exist"
+        assert re.search(rf"^def {function}\(", source.read_text("utf-8"), re.M), (
+            f"{name}: no {function}()"
+        )

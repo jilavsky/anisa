@@ -49,6 +49,7 @@ QGridLayout = QtWidgets.QGridLayout
 QGroupBox = QtWidgets.QGroupBox
 QHBoxLayout = QtWidgets.QHBoxLayout
 QHeaderView = QtWidgets.QHeaderView
+QInputDialog = QtWidgets.QInputDialog
 QLabel = QtWidgets.QLabel
 QLineEdit = QtWidgets.QLineEdit
 QListWidget = QtWidgets.QListWidget
@@ -76,6 +77,8 @@ QWidget = QtWidgets.QWidget
 
 # --- QtCore ------------------------------------------------------------------
 Qt = QtCore.Qt
+QByteArray = QtCore.QByteArray
+QEventLoop = QtCore.QEventLoop
 QObject = QtCore.QObject
 QThread = QtCore.QThread
 QTimer = QtCore.QTimer
@@ -116,6 +119,7 @@ __all__ = [
     "QGroupBox",
     "QHBoxLayout",
     "QHeaderView",
+    "QInputDialog",
     "QLabel",
     "QLineEdit",
     "QListWidget",
@@ -142,6 +146,8 @@ __all__ = [
     "QWidget",
     # QtCore
     "Qt",
+    "QByteArray",
+    "QEventLoop",
     "QObject",
     "QThread",
     "QTimer",

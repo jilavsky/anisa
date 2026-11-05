@@ -78,8 +78,10 @@ Repository = "https://github.com/jilavsky/anisa"
 Changelog = "https://github.com/jilavsky/anisa/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/jilavsky/anisa/issues"
 
-# [project.scripts] — anisa-gui, anisa, anisa-mcp are added as each surface is implemented
-# (PLAN.md Phases 4, 7, 8); declaring them earlier would install broken commands.
+# `anisa` (command line) and `anisa-mcp` are added when implemented (PLAN.md Phases 7, 8);
+# declaring them earlier would install broken commands.
+[project.scripts]
+anisa-gui = "anisa.gui.app:main"
 
 [tool.setuptools.packages.find]
 include = ["anisa*"]

@@ -38,6 +38,13 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
 - Tests compare against independent references (brute force, scipy quadrature, analytic
   limits), not against the engine's own output. Tolerances are tied to a stated accuracy target
   (1e-4 relative at the worst Q point); tighten the code, not the tolerance, if they fail.
+- **Qt threading rules (each learned from a bug here).** Workers run on a deep copy of the model,
+  never on the objects the GUI edits. Never drop the last Python reference to a `QThread` inside
+  its own `finished` handler (the thread is still shutting down: "Destroyed while thread is
+  running"); keep it in `_threads` and prune with `_reap_threads()`. "Busy" is explicit state set
+  before `start()` and cleared in the job's `finished` handler, never `isRunning()`. Tests must
+  never open a modal dialog (stub `_show_message` / `_confirm_discard`): offscreen it hangs
+  forever.
 - GUI labels keep the Igor parameter names (Radius, Volume Fract, Beta, Delta rho,
   P alpha par 1…). JSON keys are snake_case; the mapping is in PLAN.md §4.1.
 - Reuse pyIrena (`pyirena.io`, `pyirena.gui.sas_plot`, `fit_metrics`, `setup_config`) before

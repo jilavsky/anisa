@@ -6,6 +6,11 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **GUI (Phase 4)**, `anisa-gui`: main window with a directions table, population tabs (parameters
+  with fit flags, limits and errors, size distribution, orientation tables, interference), I(Q)
+  with residuals and fit-range cursors, orientation-distribution plots, fit log, project
+  open/save/recent, drag-and-drop data, demo data generator, background calculation and fitting
+  with progress and cancel, revert, Monte-Carlo uncertainty. 28 GUI tests (255 in total).
 - **Fitting (Phase 3)**, `anisa.core.fitting`: `fit` (least squares, bounds, per-population
   flags, progress/cancel), `revert`, `goodness_of_fit`, covariance and `monte_carlo` uncertainties.
   The formula-4c sum over size classes is now one vectorised contraction (fit 1.75x faster).
