@@ -12,8 +12,8 @@ NIST 2001). It must:
 - install from PyPI into the same environment as pyIrena and Bernardyn,
 - have three surfaces: **GUI (priority)**, command line with JSON configuration, and an MCP server.
 
-Status: **Phases 0 and 1 done (core engine); Phase 2 (data I/O, project JSON, synthetic data)
-next.** Decisions taken so far are in §12, open to-dos in §13.
+Status: **Phases 0–2 done (core engine, data I/O, project files, synthetic data); Phase 3
+(fitting) next.** Decisions taken so far are in §12, open to-dos in §13.
 
 ---
 
@@ -267,6 +267,8 @@ table goes in `docs/parameters.md`.
 |---|---|---|
 | `directions[i].alpha_q`, `.omega_q` | `DirN_AlphaQ`, `DirN_OmegaQ` | deg |
 | `directions[i].background` (+ `fit`, `limits`) | `DirN_Background` (not fittable in Igor) | cm⁻¹ |
+| `directions[i].q_min`, `.q_max` | cursors on the Igor graph (`DirN_MaskWave`) | Å⁻¹ |
+| `directions[i].source` {`path`, `internal_path`, `variant`, `fingerprint`, `q_unit`, `error_fraction`} | `DirN_DataFolderName`, `DirN_IntWvName` … | |
 | `populations[j].radius` | `PopN_Radius` | Å |
 | `populations[j].volume_fraction` | `PopN_VolumeFraction` | — |
 | `populations[j].beta` | `PopN_Beta` (aspect ratio) | — |
@@ -299,6 +301,34 @@ length limit.
 needs a pyIrena piece that is not public, promote it to documented public API in pyIrena (as
 `pyirena.io.scattering` was for Bernardyn) rather than copy it. Those changes go to the pyIrena
 repository as separate, coordinated commits.
+
+---
+
+### 4.3 Data input and project files (Phase 2)
+
+- **Reading** goes only through `pyirena.io.discover_scattering` / `load_scattering`
+  (`anisa/io/data.py`): NXcanSAS, simple HDF5 and text, never modified. A curve without an
+  uncertainty gets `error_fraction × I` (pyIrena's 5 % default). Q is sorted ascending. A
+  slit-smeared curve loads with a warning (§11); a non-cm⁻¹ intensity unit warns. A file with
+  several curves needs `internal_path` (the GUI will offer pyIrena's picker).
+- **Fit mask** (`Direction.fit_mask`): finite Q and I, Q > 0, finite uncertainty > 0, and
+  `q_min ≤ Q ≤ q_max`. Igor marked the range with cursors; here it is two numbers per direction.
+- **Fingerprint** is a SHA-256 of the file *content* (pyIrena's is path + size + mtime, which
+  changes when a file is copied). A changed file loads with a warning; a missing file warns and
+  the project still opens with that direction empty.
+- **Project file** (`anisa/io/project.py`, `*.anisa.json`): `{"_anisa_project": {format,
+  schema_version, saved_by, saved_at}, "model": …}`. Settings and data *references* only; the
+  arrays stay in the data files. Paths are stored relative to the project (a project folder can
+  be moved or shared) with the absolute path as a fallback (the project file alone can be moved).
+  Written atomically with the user's umask permissions. Older and newer files load (defaults
+  for missing fields; a newer schema warns).
+- **Wavelength** for formulas 4a/4b is read from `entry/instrument/wavelength` of an HDF5 file
+  when present (`find_wavelength`); the GUI will pre-fill it.
+- **Synthetic data** (`python -m anisa.demo FOLDER`): Allen's thermal-spray example (cracks
+  perpendicular to the substrate, pores parallel to it, spherical voids with a size
+  distribution) along four directions, with noise equal to the stored uncertainty. Writes
+  NXcanSAS or text files, `demo.anisa.json` (truth) and `demo_start.anisa.json` (perturbed
+  start with fit flags set, for the Phase 3 round-trip test).
 
 ---
 
@@ -398,7 +428,7 @@ field.
 |---|---|---|
 | **0** ✅ | Repository, packaging, environment, CI skeleton, this plan | `conda env create` works; `import anisa`, ruff and pytest pass |
 | **1** ✅ | Core engine: geometry (sample frame now, lab frame designed in), orientation, 4a/4b/4c, Irena size distributions, interference, totals, surface area; caching; threads | Validation §9 items 1–4 pass (165 tests); benchmarks recorded in §3 |
-| **2** | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless |
+| **2** ✅ | Data I/O through `pyirena.io`; project JSON round trip; `anisa.demo` synthetic data | Load real and synthetic files; JSON save/load is lossless (204 tests) |
 | **3** | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters |
 | **4** | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively |
 | **5** | Anisotropy tab (azimuthal and polar, experimental overlay) | Igor's X/Y/Z scans are reproducible as special cases |

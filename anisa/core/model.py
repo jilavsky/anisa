@@ -219,6 +219,54 @@ class Population:
 
 
 @dataclass
+class DataSource:
+    """Where a direction's measured data came from, so a project can reload them.
+
+    The project file stores this reference, never the arrays. ``fingerprint`` is a SHA-256 of the
+    file *content*, so a moved or copied file still matches and an edited one is detected.
+
+    Attributes:
+        path: data file (HDF5 or text). Resolved against the project folder when relative.
+        internal_path: HDF5 group of the curve inside the file (``None`` for text files).
+        variant: ``"default"``, ``"slit-smeared"``, ``"text"`` or ``"simple-hdf5"``.
+        fingerprint: SHA-256 of the file content, hex.
+        q_unit: unit of Q in a text file (ignored for NXcanSAS, which carries its own).
+        error_fraction: relative uncertainty assumed for files that have none.
+    """
+
+    path: str = ""
+    internal_path: str | None = None
+    variant: str = "default"
+    fingerprint: str = ""
+    q_unit: str = "1/A"
+    error_fraction: float = 0.05
+
+    def to_dict(self) -> dict:
+        return {
+            "path": self.path,
+            "internal_path": self.internal_path,
+            "variant": self.variant,
+            "fingerprint": self.fingerprint,
+            "q_unit": self.q_unit,
+            "error_fraction": self.error_fraction,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict | None) -> DataSource | None:
+        if not data or not data.get("path"):
+            return None
+        default = cls()
+        return cls(
+            path=str(data["path"]),
+            internal_path=data.get("internal_path"),
+            variant=str(data.get("variant", default.variant)),
+            fingerprint=str(data.get("fingerprint", "")),
+            q_unit=str(data.get("q_unit", default.q_unit)),
+            error_fraction=float(data.get("error_fraction", default.error_fraction)),
+        )
+
+
+@dataclass
 class Direction:
     """One measured 1D cut I(Q) along a direction of Q in the sample frame (Igor ``DirN_*``).
 
@@ -229,6 +277,9 @@ class Direction:
         background: constant background [cm**-1]. In Igor it was subtracted from the data and
             could not be fitted; in Anisa it is added to the model and can be fitted.
         q, intensity, uncertainty: measured data (1/A, 1/cm, 1/cm); ``None`` until loaded.
+        source: where the data came from (see :class:`DataSource`); ``None`` for data that was
+            set directly, e.g. synthetic data.
+        q_min, q_max: Q range used by the fit [1/A]; ``None`` means no limit on that side.
         use: include this direction in the fit.
         fit_specs: fit flags and limits (``background``).
     """
@@ -240,8 +291,31 @@ class Direction:
     q: np.ndarray | None = None
     intensity: np.ndarray | None = None
     uncertainty: np.ndarray | None = None
+    source: DataSource | None = None
+    q_min: float | None = None
+    q_max: float | None = None
     use: bool = True
     fit_specs: dict[str, FitSpec] = field(default_factory=dict)
+
+    def fit_mask(self) -> np.ndarray:
+        """Boolean mask of the data points the fit uses.
+
+        A point is used if Q, intensity and uncertainty are finite, Q is positive and inside
+        ``[q_min, q_max]``, and the uncertainty is positive (a point with zero uncertainty would
+        have infinite weight). Returns an empty array when no data are loaded.
+        """
+        if self.q is None or self.intensity is None:
+            return np.zeros(0, dtype=bool)
+        q = np.asarray(self.q, dtype=float)
+        mask = np.isfinite(q) & (q > 0) & np.isfinite(self.intensity)
+        if self.uncertainty is not None:
+            sigma = np.asarray(self.uncertainty, dtype=float)
+            mask &= np.isfinite(sigma) & (sigma > 0)
+        if self.q_min is not None:
+            mask &= q >= self.q_min
+        if self.q_max is not None:
+            mask &= q <= self.q_max
+        return mask
 
     def geometry_key(self) -> tuple:
         return (float(self.alpha_q), float(self.omega_q))
@@ -252,12 +326,16 @@ class Direction:
         return self.fit_specs[path]
 
     def to_dict(self) -> dict:
-        """Settings only. Data arrays are stored by the results writer, not in the project."""
+        """Settings and the data source. Data arrays are stored by the results writer, never in
+        the project."""
         out = {
             "label": self.label,
             "alpha_q": self.alpha_q,
             "omega_q": self.omega_q,
+            "q_min": self.q_min,
+            "q_max": self.q_max,
             "use": self.use,
+            "source": self.source.to_dict() if self.source else None,
         }
         out.update(_fit_specs_to_dict({"background": self.background}, self.fit_specs))
         return out
@@ -271,6 +349,9 @@ class Direction:
             alpha_q=float(data.get("alpha_q", 0.0)),
             omega_q=float(data.get("omega_q", 0.0)),
             background=values["background"],
+            q_min=_num_or_none(data.get("q_min")),
+            q_max=_num_or_none(data.get("q_max")),
+            source=DataSource.from_dict(data.get("source")),
             use=bool(data.get("use", True)),
             fit_specs=specs,
         )

@@ -6,6 +6,15 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Data I/O and project files (Phase 2)**:
+  - `anisa.io.data`: `load_direction` / `reload_direction_data` through pyIrena's public reader
+    (NXcanSAS, simple HDF5, text); content fingerprints; wavelength from file metadata.
+  - `Direction.q_min` / `q_max` / `fit_mask()` and `DataSource` (data reference).
+  - `anisa.io.project`: `save_project` / `load_project` (`*.anisa.json`, atomic, relative data
+    paths with absolute fallback, no arrays in the file).
+  - `anisa.demo` (`python -m anisa.demo FOLDER`): synthetic three-population, four-direction
+    data with known parameters, plus a perturbed starting model.
+  - 39 more tests (204 in total).
 - **Core engine (Phase 1)**, `anisa.core`:
   - Sample-frame geometry (Allen eq. 1); orientation distributions p(α)·b(ω), parametric or
     table, normalised exactly on the integration grid.
