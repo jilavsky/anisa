@@ -73,6 +73,18 @@ anisa anisotropy project.anisa.json --sweep alpha --fixed 0 --q 0.01 0.05 --csv 
 The project file is the one the GUI saves; every command prints JSON (`anisa.api` has the same
 functions for Python).
 
+## MCP server (agents)
+
+```bash
+pip install "anisa[mcp]"
+ANISA_DATA_ROOT=/path/to/data anisa-mcp          # stdio server
+aida mcp server add anisa --command anisa-mcp    # register with Aida
+```
+
+Tools (`anisa_` prefix): `list_files`, `describe`, `calculate`, `fit`, `anisotropy`,
+`read_results`, `list_test_systems`, `write_test_system`. They are the `anisa.api` functions;
+file access is confined to `ANISA_DATA_ROOT` (default: the working directory).
+
 ## Example
 
 ```python

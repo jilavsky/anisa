@@ -505,7 +505,7 @@ field.
 | **6** ✅ | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena (318 tests); write-back into source files (§6 item 2) deferred, Bernardyn read check comes with Phase 9 |
 | — | **Milestone: testing release for Jan with real data** | |
 | 7 ✅ | `anisa.api`, CLI, JSON batch | Same result headless as in the GUI (`anisa info/calc/fit/anisotropy/testdata`) |
-| 8 | MCP server, Aida registration, skill file | An agent can run a fit end to end |
+| 8 ✅ | MCP server (`anisa-mcp`, 8 tools, confined to `ANISA_DATA_ROOT`) | An agent can run a fit end to end (stdio round trip tested); Aida registration is the one-line command in the README, a dedicated helper and skill file not done |
 | 9 | Bernardyn package export; launch from pyIrena (needs a small pyIrena plugin hook) | — |
 | 10 | 2D detector images (research, §10) | — |
 | 11 | Slit-smeared anisotropic data (research, §11) | A forward model validated on synthetic data |

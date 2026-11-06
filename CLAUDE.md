@@ -22,6 +22,8 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
 - `anisa/api.py` (JSON in/out functions) and `anisa/cli.py` (the `anisa` command) are the headless
   surface: no Qt, and the CLI and MCP server share the API; keep return values JSON-serialisable
   (test_cli checks this).
+- `anisa/mcp/tools.py` — the MCP tools as plain functions (path guard to `ANISA_DATA_ROOT`, no
+  `mcp` import); `anisa/mcp/server.py` only registers them with FastMCP (mcp 1.x, `anisa[mcp]`).
 - `benchmarks/` — `convergence.py` (accuracy against an independent brute force) and
   `performance.py`. Re-run both after any change to the engine's numerics.
 - `docs/parameters.md` — Igor ↔ Anisa parameter mapping.

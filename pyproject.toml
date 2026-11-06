@@ -53,7 +53,7 @@ gui = [
     "pyirena[qtplot]>=1.2.1,<2",
 ]
 mcp = [
-    # Planned (PLAN.md Phase 8). Same <2.0 cap as pyIrena/Bernardyn: mcp 2.0 removed
+    # Same <2.0 cap as pyIrena/Bernardyn: mcp 2.0 removed
     # mcp.server.fastmcp.
     "mcp>=1.0.0,<2.0",
     "matplotlib>=3.5.0",
@@ -78,11 +78,10 @@ Repository = "https://github.com/jilavsky/anisa"
 Changelog = "https://github.com/jilavsky/anisa/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/jilavsky/anisa/issues"
 
-# `anisa-mcp` is added when implemented (PLAN.md Phase 8); declaring it earlier would install a
-# broken command.
 [project.scripts]
 anisa = "anisa.cli:main"
 anisa-gui = "anisa.gui.app:main"
+anisa-mcp = "anisa.mcp.server:main"
 
 [tool.setuptools.packages.find]
 include = ["anisa*"]

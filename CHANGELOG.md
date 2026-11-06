@@ -6,6 +6,10 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **MCP server (Phase 8)**, `anisa-mcp` (`anisa[mcp]`, mcp 1.x): eight `anisa_` tools over
+  `anisa.api` (list, describe, calculate, fit with Monte Carlo, anisotropy scan, read results,
+  test systems). File access confined to `ANISA_DATA_ROOT`; requests capped. In-process and
+  stdio round-trip tests.
 - **`anisa.api` and the `anisa` command (Phase 7)**: `info`, `calc`, `fit` (`--mc N`,
   `--update-project`, results file written next to the project), `anisotropy` (saved or ad hoc
   scan, `--csv`) and `testdata`. JSON in and out, the same functions the MCP server will call.
