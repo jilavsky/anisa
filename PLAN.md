@@ -563,35 +563,209 @@ Problems to solve then:
 ## 11. Slit-smeared anisotropic data (research)
 
 Igor AnisoSAS needs desmeared data, and so does Anisa for now. On USAXS that means 2D-collimated
-USAXS. A forward model for slit-smeared data looks possible, and it would make Anisa much more
-useful.
+USAXS. This section records the research of 2026-11-06 (prior art, physics, a prototype) and
+the plan. **Conclusion: no existing tool fits slit-smeared data with physical orientation
+distributions. A forward model in Anisa is feasible, reuses the engine, and is the feature that
+makes Anisa unique.**
 
-**Why the usual approach fails.** For an isotropic sample, slit smearing is a 1D integral,
-I_s(q) = (1/ℓ)∫₀^ℓ I(√(q²+l²)) dl, so the data can be desmeared first and fitted afterwards.
-For an anisotropic sample, every point along the slit has a **different Q direction**:
-- Q = q·ê_scan + l·ê_slit (small angle, Q ⟂ beam). ê_scan is the Bonse–Hart scan direction and
-  ê_slit the slit-length direction, both in the lab frame.
-- With the sample orientation R (lab → sample frame), the direction along the slit is
-  d(l) = R(q·ê_scan + l·ê_slit)/√(q²+l²).
-- So I_s(q) = (1/2ℓ)∫₋ℓ^ℓ I(√(q²+l²), d(l)) dl. Both signs of l are needed: ±l give different
-  directions unless the sample is symmetric about the scan direction.
+### 11.1 Prior art (checked 2026-11-06)
+| Source | What it does | Why it does not solve our case |
+|---|---|---|
+| **sasmodels `resolution2d.Slit2D`** (SasView, since 2016; `example/oriented_usans.py`) | Fits 1D slit data from an oriented sample: evaluates the 2D model on a (qx, qy) grid and integrates over qy (log-spaced, 50–1000 points) | Script-only (bumps; the SasView GUI does not use it). One oriented particle with Gaussian jitter of its angles, not p(α)·b(ω). One population per model, one sample orientation per data set. No 1/(2ℓ) normalisation. **Bug in current master:** the 2022 rename (`qx_width, qy_width` → `q_length, q_width`) and the 2025 fix to `direct_model.py` make it integrate over qy up to the slit *width* and Gaussian-smear qx by the slit *length*. These are swapped relative to the original code |
+| **Gu & Mildner**, J. Appl. Cryst. 49, 934 (2016); 51, 175 (2018) | USANS slit smearing of anisotropic scattering from porous media with elliptical iso-intensity contours | Assumes a specific functional form (affine/elliptical, power law) |
+| **Tung, Huang, Wang, … Chen (ORNL)**, J. Chem. Phys. 164, 164108 (2026), doi:10.1063/5.0325436; J. Appl. Cryst. (2026), doi:10.1107/S1600576726007570 | Bayesian (Gaussian-process) *desmearing* of anisotropic Bonse–Hart USANS. Assumes the pattern is an **affine deformation of an isotropic one**, I(Q) = I_iso(√(Qᵀ A Q)). Uses two sample orientations (strain axis ∥ and ⟂ to the slit) and high-Q (unsmeared) overlap | Single ellipse per sample: right for stretched polymer melts, wrong for several populations with different orientations (cracks ⟂ + pores ∥ in coatings) or broad orientation distributions. No code released (data "on request"). The JAC paper itself discusses the "geometric limitations of anisotropic desmearing" |
+| Allen's SBUSAXS work (the Igor code) | Avoided the problem with side-bounce (2D-collimated) USAXS | — |
 
-Desmearing such data as if it were isotropic is wrong. Fitting the smeared model directly is
-not.
+Two take-aways: (1) the field has only *desmearing under an affine assumption*; nobody fits a
+forward model with physical populations and orientation distributions. (2) The affine case is
+exactly one perfectly aligned spheroid population in Anisa (formula 4c: F depends on Q·K =
+|M Q|). That gives an independent analytic reference for the tests (§11.6).
 
-**What Anisa needs for it:**
-- **The core already fits.** It evaluates I at arrays of (|Q|, α_Q, ω_Q), so a smeared point is
-  a weighted sum over ~50–100 directions along the slit. That is affordable with the vectorised
-  engine.
-- **Per-measurement geometry:** the sample orientation (rotation angles recorded by the stage),
-  ê_scan and ê_slit, and the slit length (`ScatteringRecord` already carries `slit_length`).
-- **Information content:** each point mixes directions, so measurements at several sample
-  rotations (e.g. about the beam axis) are needed to recover the anisotropy. Synthetic tests
-  will show how many.
+### 11.2 Physics and geometry
+- **Lab frame:** ê_b along the beam, ê_s the Bonse–Hart scan direction (horizontal), ê_l the
+  slit-length direction (vertical). Q = q ê_s + l ê_l (small angles, Q ⟂ beam).
+- **Smeared intensity** (rectangular slit, same convention as `pyirena.core.smearing`, SL = dQl):
+  I_s(q) = (1/2SL) ∫₋SL^SL I(√(q²+l²), d) dl, with the direction in the sample frame
+  d = R(cos ψ ê_s + sin ψ ê_l), tan ψ = l/q, and R the sample orientation (lab → sample).
+  Both signs of l are needed unless the sample is mirror-symmetric about the scan plane. For an
+  isotropic sample it reduces to pyIrena's (1/SL)∫₀^SL.
+- **Key observation: the directions depend only on ψ, not on q.** All points of one measured
+  curve share one family of directions d(ψ), ψ ∈ (−90°, 90°). This is a half circle in the plane
+  ⟂ beam, and I(Q) = I(−Q) covers the other half. So the model needed is I(Q, ψ) on that plane:
+  **the same polar "2D image" as §10.** Slit smearing is a line integral through it. The lab
+  geometry code is therefore shared with §10.
+- **What the data contain** (prototype, demo model, SL = 0.03 Å⁻¹, cross-section geometry):
+  - q ≫ SL: ψ ≤ atan(SL/q) (17° at q = 0.1), so the smeared curve is nearly the pinhole cut along
+    ê_s. Smeared z/x ratio 9.5 vs pinhole 9.6 at q = 0.3.
+  - q ≪ SL (most of the USAXS range): the curve is dominated by directions near the *slit*
+    direction. Smeared z/x ratio 0.41 vs pinhole 1.02 at q = 1e-4: the anisotropy appears
+    *inverted*. Desmearing such a curve as isotropic gives a wrong answer in both magnitude and
+    sign of the anisotropy.
+  - So one curve is not enough: at least two scan directions are needed (two azimuthal
+    rotations, or the two Couette geometries of §11.2a).
+- **Slit profile: rectangular** (Jan, 2026-11-06: earlier measurements show its exact shape is
+  a secondary effect).
+- **Ignored for now, as in pyIrena:** slit width (8e-5, or 3e-5 in high-resolution mode,
+  along ê_s; matters only at the lowest q) and the fly-scan bin width (a resolution along ê_s
+  only, so the direction is unchanged). Both can be added later as an extra quadrature in q
+  along ê_s; the design keeps that open.
+- **Sample rotation at 12-ID:** about the beam only (the "azimuthal angle" χ), which rotates
+  ê_s and ê_l within the plane ⟂ beam. How χ = 0 relates to the sample's anisotropy depends on
+  the sample, so the user gives the sample frame per measurement (§11.5).
 
-**Design consequence now:** `core/geometry.py` gets the lab ↔ sample frame from the start
-(Phase 1). A `Direction` can then be given either as explicit (α_Q, ω_Q) or as a lab geometry
-(sample orientation + scan direction + optional slit). The same frame serves 2D images (§10).
+### 11.2a Primary use case: Couette (cup-and-bob) rheology
+Routine USAXS data, and the case that most helps users (Jan, 2026-11-06). Only two geometries
+are possible, and the cell cannot be rotated:
+- **Sample frame:** z = flow, x = velocity gradient (gap normal), y = vorticity (cup axis,
+  vertical). A rod population aligned by flow has p(α) peaked at α = 0. A tilt by the flow-
+  alignment angle toward the gradient is p(α) peaked at Par1 together with b(ω) peaked at ω = 0.
+- **Radial geometry** (beam through the cell centre, along x): scan ∥ flow (z), slit ∥ vorticity (y).
+- **Tangential geometry** (beam through the gap at the side, along z): scan ∥ gradient (x),
+  slit ∥ vorticity (y).
+- Both have the slit along vorticity. Shear flow is mirror-symmetric in y, so ±l give equal
+  intensity and only half of each slit integral needs computing (an optimisation, detected
+  from the model, not assumed).
+- **Radial beam crosses the gap twice** (front and back walls). Flow and gradient both reverse,
+  so the undirected particle axes are the same: no correction is needed.
+- **Tangential beam crosses a curved gap:** along the beam the local flow direction turns by up
+  to ≈ ±√(g/R_o) (gap g, outer radius R_o; ±11° for g = 0.5 mm, R_o = 12.5 mm). This is a
+  rotation of the sample frame about vorticity, mixing flow and gradient. Model it as a
+  path-length-weighted average over that rotation (the same weighted sum of geometries the
+  slit uses). It is likely needed, and is to be checked on synthetic data.
+
+**Information content (2026-11-06, linearised Fisher analysis with the prototype).** Rods
+R = 300 Å, β = 10, Gauss 20 %, φ = 0.01, 150 points per curve, q = 1e-4–0.1, 3 % errors, SL = 0.03.
+Values are 1σ relative uncertainties:
+
+| Data | φ | R | β | P α par2 (alignment) | P α par1 (tilt) | B ω par2 | max \|corr\| |
+|---|---|---|---|---|---|---|---|
+| *Aligned along flow, axially symmetric* | | | | | | | |
+| slit: radial + tangential | 0.19 % | 0.15 % | 0.37 % | 0.31 % | — | — | 0.64 |
+| pinhole: flow + gradient (2D-collimated) | 0.35 % | 0.23 % | 0.46 % | 1.3 % | — | — | 0.95 |
+| pinhole: flow + gradient + vorticity | 0.27 % | 0.17 % | 0.36 % | 0.99 % | — | — | 0.94 |
+| *Tilted 15° toward gradient* | | | | | | | |
+| slit: radial + tangential | 0.43 % | 0.43 % | 0.92 % | 1.8 % | 2.3 % | 2.4 % | 0.975 |
+| pinhole: flow + gradient | 1.3 % | 0.49 % | 0.42 % | 10 % | 17 % | 7.9 % | 0.998 |
+| pinhole: flow + gradient + vorticity | 0.46 % | 0.20 % | 0.35 % | 2.9 % | 4 % | 0.55 % | 0.989 |
+
+**Slit smearing helps here rather than hurts.** Each smeared curve also samples the vorticity
+direction, which no pinhole cut in these two geometries reaches. The two routine Couette curves
+then constrain the orientation better than two 2D-collimated cuts, and about as well as three.
+Caveats: a local, linearised estimate; the model assumed correct; no background, multiple
+scattering or gap-curvature average; idealised errors. Compare the rows with each other, not
+the absolute numbers. Real fits from perturbed starts (§11.6 item 4) must confirm it. The tilt
+case is strongly correlated (tilt vs alignment width), which the fit report must show.
+
+### 11.3 Prototype (2026-11-06, `/tmp`, not committed)
+Each slit-smeared curve was evaluated as N_ψ "virtual directions" through the unchanged
+`Engine`. ln I(Q, ψ) was tabulated (800 log-spaced Q values up to √(q_max²+SL²)) and interpolated
+(periodic cubic in ψ, linear in ln Q), then integrated over l (trapezoid). Demo model:
+3 populations, cracks R = 2500 Å, 300 q points from 1e-4 to 0.3.
+
+| Check | Result |
+|---|---|
+| Isotropic population vs `pyirena.core.smearing.smear_model` | max 3.6e-5, median 1.8e-5 |
+| Convergence in N_ψ (24 → 180) | unchanged at 2e-3 vs a 360-node reference: **24 directions are enough** for these distributions. The 2e-3 floor comes from interpolating the Q table, not from ψ |
+| Time per smeared curve, cold (18 CPUs) | 1.6 s (N_ψ = 24), 2.9 s (48) |
+| Time, cached | 0.23 s (mostly the wasteful interpolation step). Above N_ψ ≈ 85 the engine's LRU (256 entries) overflowed and every call recomputed: cache sizes must scale with the number of virtual directions |
+
+So the approach works with today's engine. Two things stop the prototype from being the final
+version: accuracy (2e-3 against the 1e-4 target) and speed in fits (each Jacobian column
+recomputes one population over every virtual direction of every smeared curve).
+
+### 11.4 Computation: the plan
+**Stage A: virtual directions (correctness first).** As in the prototype, but inside the core:
+- New `anisa/core/smearing.py`: `SlitGeometry` (sample rotation, ê_s, ê_l, SL) →
+  ψ nodes and directions d(ψ). `smear(engine, model, direction, ...)` returns I_s(q).
+- **Avoid the Q table:** evaluate the model at the exact Q = √(q²+l²) values (see stage B), and
+  interpolate only in ψ, where the integrand is smooth.
+- **Choose N_ψ automatically, like the `required_nodes` floor:** the ψ spacing must resolve the
+  angular width of I(Q, ψ). That width is at least the orientation-distribution width (≈ 3√par2
+  nodes per radian, the existing ω rule) and shrinks for large Q·R·|β−1|. Test it with sharp
+  distributions, as `tests/test_orientation_resolution.py` does.
+- **l quadrature:** substitute l = q tan ψ near l = 0, or use Gauss–Legendre in l split at
+  |l| = q. The integrand has its structure at |l| ≲ q, and a uniform trapezoid wastes nodes
+  there at low q.
+
+**Stage B: share the orientation work across ψ (speed).** The engine already factorises the
+intensity into a form-factor part that depends on Q and K, and an orientation part h(K) that is
+binned per direction. For a slit family:
+- H(ψ, K): the K-binned orientation weights for each ψ node (one binning per ψ node; cached per
+  slit geometry × population orientation).
+- F(Q, K): the per-population cross section (4c closed form, the 4a/4b table, or for 4c with a
+  size distribution the polydisperse sphere P_poly(Q·K) on a fine log grid).
+- I_s(qᵢ) = Σⱼ wⱼ Σₖ H(ψᵢⱼ, Kₖ) F(Qᵢⱼ, Kₖ). The oscillations stay in F, evaluated exactly at
+  Qᵢⱼ. H is interpolated in ψ, which is smooth. Cost is n_q · n_l · n_K (≈ 300 · 64 · 300 ≈ 6e6
+  per population), comparable to one ordinary direction today.
+- A volume-fraction change still recomputes nothing. A shape or orientation change of one
+  population recomputes only that population's H or F.
+- This is the same matrix product §10 needs for 2D images: I(q, φ) = F · Hᵀ.
+
+**Not chosen:** a fully analytic reduction. For one orientation and 4c, the slit integral is a
+1D integral of a function of a quadratic form in l. Completing the square gives a 2D table
+C(R·q_eff, R·t) of the sphere's cumulative slit integral, with orientation weights binned on
+(ê_s·n̂, ê_l·n̂). It is elegant and fast, but valid only for 4c (4a/4b depend on K beyond Q·K) and
+needs an accurate 2D table of an oscillating function. It stays as an **independent reference
+for tests**, not as the engine path.
+
+### 11.5 Model, data and GUI
+- `Direction` gets an optional `slit` block: `{slit_length, slit_alpha, slit_omega}`. No slit
+  block means a pinhole cut along (α_Q, ω_Q), as now; `from_dict()` defaults keep old projects
+  loading. For a slit-smeared direction, (α_Q, ω_Q) is the scan direction ê_s and
+  (slit_alpha, slit_omega) the slit direction ê_l, both in the sample frame (orthogonal, checked).
+  The existing table column then still means "where the scan points".
+  - The user thinks in the sample frame (Couette: "scan ∥ flow, slit ∥ vorticity"). Presets
+    for the two Couette geometries (and an optional curvature average, §11.2a) fill these in.
+  - For plate samples rotated about the beam, the azimuthal angle χ and the orientation at
+    χ = 0 generate them. χ itself is sample-dependent, so it is not the stored quantity.
+- **Data:** `pyirena.io` already returns `slit_length` (NXcanSAS dQl). Loading a slit-smeared
+  curve stops warning and switches the direction to smeared mode. χ is pre-filled from the file
+  metadata if the 12-ID files record it.
+- **Results file (§6):** add the slit block to the direction's settings and store the
+  *unsmeared* model along ê_s next to the smeared one. These are additions only, so frozen
+  names stay valid.
+- **GUI:** a "Slit" column (SL, rotation) in the directions table; the I(Q) plot shows smeared
+  model vs smeared data, with an optional dashed unsmeared model along ê_s. The anisotropy tab
+  can overlay smeared data only at q ≫ SL (mark it as approximate there).
+
+### 11.6 Validation (all against independent references, 1e-4 target)
+1. **Isotropic limit** (β = 1, or an isotropic orientation distribution, or the beam along an
+   axial-symmetry axis): equal to `pyirena.core.smearing.smear_model` of the pinhole curve. The
+   prototype already gives 4e-5; pyIrena's own trapezoid is the limit there, so also compare
+   with scipy `quad`.
+2. **Affine limit** (one perfectly aligned monodisperse spheroid, 4c): I(Q) = A²(R|M Q|), and
+   the slit integral via completed square and a 1D `quad` (§11.4, "not chosen").
+3. **Brute force:** nested scipy quadrature over l of single-direction engine evaluations
+   (each direction checked against the existing brute-force orientation sum).
+4. **Couette round trip (the reference test case).** A synthetic flow-aligned rod system
+   (§11.2a, aligned and tilted variants, optionally a second isotropic population) produces
+   radial + tangential slit-smeared curves with noise. A fit from a perturbed start must
+   recover the truth within σ, as the demo round trip does now (§9 item 5). It goes into
+   `anisa.testsets` and `anisa.demo`. A plate-sample variant (azimuthal rotations 0°/90°, and
+   0/45/90/135°) follows.
+5. **N_ψ floor test** for sharp distributions (like `test_orientation_resolution.py`).
+6. **Mirror-symmetry shortcut** (half slit integral) equals the full integral whenever it is
+   used.
+
+### 11.7 Steps (Phase 11)
+1. `core/geometry.py`: `SlitGeometry` (ê_s, ê_l in the sample frame, SL) → d(ψ); azimuthal-angle
+   and Couette helpers.
+2. `core/smearing.py`, stage A with exact-Q evaluation, automatic N_ψ, the l quadrature and the
+   mirror shortcut; validation items 1–3, 5 and 6.
+3. Model/JSON/results additions (§11.5); fitting works unchanged on smeared directions.
+4. Couette round trip (item 4), including the gap-curvature average; write the result here.
+5. Stage B (H(ψ, K) · F(Q, K)) if fits are too slow; re-run `benchmarks/` and add a slit case to
+   both scripts.
+6. GUI (Couette presets) and CLI/MCP exposure; docs.
+7. Real 12-ID Couette data with a known answer, e.g. a flow-aligned rod or fibre suspension
+   (Jan).
+
+### 11.8 Open questions for Jan
+- Does the 12-ID metadata record the azimuthal angle χ, and for the Couette cell which
+  geometry (radial / tangential) and the gap and radii?
+- A good first real sample for step 7: something whose alignment is known independently
+  (2D SAXS of the same flow, or rheo-optics)?
+- sasmodels `Slit2D` argument swap: Jan e-mailed the SasView developers (2026-11-06).
 
 ---
 
@@ -608,6 +782,14 @@ not.
    (§4.2).
 6. **Allen's theory notes** (`Igor source/Theory AnisoSAS.*`) stay local: listed in
    `.gitignore`, not tracked. The Igor `.ipf` code is tracked as reference.
+
+**2026-11-06 (slit-smeared data, §11):**
+
+7. **Rectangular slit**; its exact shape is a secondary effect. Slit width and fly-scan bin
+   width are ignored, as in pyIrena.
+8. **Couette rheology** (radial + tangential geometry, slit ∥ vorticity) is the primary use
+   case and the reference test case. Plate samples with azimuthal rotation about the beam
+   come second.
 
 ---
 
