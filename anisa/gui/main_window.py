@@ -287,6 +287,12 @@ class MainWindow(QMainWindow):
             "Ctrl+E",
             tip="One file with the data, model curves, parameters and errors of all directions",
         )
+        self._action(
+            file_menu,
+            "Export &Bernardyn package…",
+            self.export_bernardyn_dialog,
+            tip="Data and model curves of all directions as a Bernardyn graph package",
+        )
         file_menu.addSeparator()
         self._action(file_menu, "Add &data files…", self.add_data_dialog, "Ctrl+D")
         self._action(
@@ -1028,6 +1034,34 @@ class MainWindow(QMainWindow):
         self.state.set_folder("results", path)
         self.log(f"Saved results {path}")
         self.statusBar().showMessage(f"Saved results to {path}", 6000)
+        return True
+
+    def export_bernardyn_dialog(self) -> bool:
+        """Write data and model curves of all directions into a Bernardyn package."""
+        if self._busy():
+            return False
+        from anisa.io.bernardyn_export import export_bernardyn_package
+
+        if not any(d.q is not None for d in self.model.directions):
+            self._show_message("Nothing to export", "Add data first.", QMessageBox.Icon.Information)
+            return False
+        chosen, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Bernardyn package",
+            str(Path(self.state.folder("results")) / "anisa_plot"),
+            "Bernardyn packages (*.bernardyn.h5);;All files (*)",
+        )
+        if not chosen:
+            return False
+        try:
+            path = export_bernardyn_package(self.model, chosen, engine=self.engine, overwrite=True)
+        except (OSError, ValueError, ImportError) as error:
+            self.log(f"Could not export Bernardyn package: {error}")
+            self._show_message("Could not export Bernardyn package", str(error))
+            return False
+        self.state.set_folder("results", path)
+        self.log(f"Exported Bernardyn package {path}")
+        self.statusBar().showMessage(f"Exported {path}", 6000)
         return True
 
     def create_demo_dialog(self) -> None:

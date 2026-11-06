@@ -67,6 +67,7 @@ anisa testdata folder --system prolate_oblate        # synthetic data with known
 anisa info    folder/prolate_oblate/prolate_oblate_start.anisa.json
 anisa fit     folder/prolate_oblate/prolate_oblate_start.anisa.json --mc 20 --text
 anisa calc    project.anisa.json --results out.anisa.h5
+anisa export-bernardyn project.anisa.json plot     # needs Bernardyn installed
 anisa anisotropy project.anisa.json --sweep alpha --fixed 0 --q 0.01 0.05 --csv scan.csv
 ```
 

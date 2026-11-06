@@ -6,6 +6,10 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Bernardyn export (Phase 9)**: File → Export Bernardyn package…, `anisa export-bernardyn FILE
+  PACKAGE [--recipe raw_iq|guinier|porod|kratky…]` and the `anisa_export_bernardyn` MCP tool
+  put data and model curves of all directions on one graph in a self-contained package.
+  Bernardyn stays an optional import (public headless API only).
 - **MCP server (Phase 8)**, `anisa-mcp` (`anisa[mcp]`, mcp 1.x): eight `anisa_` tools over
   `anisa.api` (list, describe, calculate, fit with Monte Carlo, anisotropy scan, read results,
   test systems). File access confined to `ANISA_DATA_ROOT`; requests capped. In-process and

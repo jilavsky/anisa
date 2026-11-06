@@ -126,6 +126,15 @@ def read_results(file: str) -> dict:
     return api.summary(resolve(file))
 
 
+def export_bernardyn(
+    file: str, package: str, recipe: str = "raw_iq", overwrite: bool = False
+) -> dict:
+    """Write data and model curves of all directions into a Bernardyn graph package."""
+    return api.export_bernardyn(
+        resolve(file), resolve(package, must_exist=False), recipe=recipe, overwrite=overwrite
+    )
+
+
 def list_test_systems() -> list[dict]:
     """The synthetic test systems (known truth) that write_test_system can create."""
     return api.list_test_systems()
@@ -148,6 +157,7 @@ TOOLS = {
     "fit": fit,
     "anisotropy": anisotropy,
     "read_results": read_results,
+    "export_bernardyn": export_bernardyn,
     "list_test_systems": list_test_systems,
     "write_test_system": write_test_system,
 }

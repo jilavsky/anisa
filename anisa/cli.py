@@ -6,6 +6,7 @@ Command line: ``anisa COMMAND``. A thin layer over :mod:`anisa.api`; no Qt.
 ``anisa calc FILE``     calculate the model, report chi-squared (``--results`` writes HDF5)
 ``anisa fit FILE``      fit the flagged parameters, write ``NAME.anisa.h5`` (``--mc N``)
 ``anisa anisotropy``    I(angle) scan of a saved scan, or ``--sweep/--fixed/--q`` (``--csv``)
+``anisa export-bernardyn``  data and model of all directions as a Bernardyn package
 ``anisa testdata DIR``  write the synthetic test systems (``--system NAME``, ``--list``)
 ====================  =====================================================================
 
@@ -91,6 +92,12 @@ def _parser() -> argparse.ArgumentParser:
     scan.add_argument("--no-measured", action="store_true", help="skip the measured cuts")
     scan.add_argument("--csv", help="write the total intensity as CSV to this file")
 
+    export = commands.add_parser("export-bernardyn", help="data and model as a Bernardyn package")
+    export.add_argument("file")
+    export.add_argument("package")
+    export.add_argument("--recipe", default="raw_iq", help="Bernardyn recipe (default raw_iq)")
+    export.add_argument("--overwrite", action="store_true")
+
     data = commands.add_parser("testdata", help="write synthetic test systems with known truth")
     data.add_argument("folder", nargs="?")
     data.add_argument("--system", action="append", help="system name (default: all)")
@@ -132,6 +139,12 @@ def main(argv: list[str] | None = None) -> int:
             if args.csv:
                 _write_csv(args.csv, scan)
             _emit(scan)
+        elif args.command == "export-bernardyn":
+            _emit(
+                api.export_bernardyn(
+                    args.file, args.package, recipe=args.recipe, overwrite=args.overwrite
+                )
+            )
         elif args.command == "testdata":
             if args.list:
                 _emit(api.list_test_systems())
@@ -148,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
                         for name in names
                     ]
                 )
-    except (OSError, ValueError, KeyError) as error:
+    except (OSError, ValueError, KeyError, ImportError) as error:
         print(f"anisa {args.command}: {error}", file=sys.stderr)
         return 2
     return 0

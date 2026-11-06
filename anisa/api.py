@@ -41,6 +41,7 @@ __all__ = [
     "anisotropy",
     "calculate",
     "describe",
+    "export_bernardyn",
     "fit",
     "list_test_systems",
     "load_model",
@@ -335,3 +336,19 @@ def summary(results: str | Path) -> dict:
         },
         "fit": {k: (_number(v) if isinstance(v, float) else v) for k, v in data.fit.items()},
     }
+
+
+def export_bernardyn(
+    project: str | Path, package: str | Path, *, recipe: str = "raw_iq", overwrite: bool = False
+) -> dict:
+    """Write data and model curves of all directions into a Bernardyn graph package.
+
+    Needs Bernardyn installed (optional). ``recipe`` is a Bernardyn scattering recipe id
+    (``raw_iq``, ``guinier``, ``porod``, ``kratky``, ...).
+    """
+    from anisa.io.bernardyn_export import export_bernardyn_package
+
+    path = export_bernardyn_package(
+        load_model(project), package, recipe=recipe, overwrite=overwrite
+    )
+    return {"package": str(path), "recipe": recipe}

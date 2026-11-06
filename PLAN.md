@@ -506,7 +506,7 @@ field.
 | — | **Milestone: testing release for Jan with real data** | |
 | 7 ✅ | `anisa.api`, CLI, JSON batch | Same result headless as in the GUI (`anisa info/calc/fit/anisotropy/testdata`) |
 | 8 ✅ | MCP server (`anisa-mcp`, 8 tools, confined to `ANISA_DATA_ROOT`) | An agent can run a fit end to end (stdio round trip tested); Aida registration is the one-line command in the README, a dedicated helper and skill file not done |
-| 9 | Bernardyn package export; launch from pyIrena (needs a small pyIrena plugin hook) | — |
+| 9 ✅ | Bernardyn package export (public `bernardyn.api` only; optional) | Data and model of all directions in one package (GUI, `anisa export-bernardyn`, MCP). Launch from pyIrena still open: needs a pyIrena plugin hook (separate pyIrena commit, not started) |
 | 10 | 2D detector images (research, §10) | — |
 | 11 | Slit-smeared anisotropic data (research, §11) | A forward model validated on synthetic data |
 | 12 | Microstructure visualisation: 3D particle shapes, orientation maps (§14) | Shape and map shown per population, updating with the model |

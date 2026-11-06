@@ -680,3 +680,14 @@ def test_save_results_then_open_them_again(qapp, window, demo_project, tmp_path,
     assert wait_until(qapp, lambda: settled(qapp, window))
     assert window.last_stats.chi_squared == pytest.approx(chi_before, rel=1e-9)
     assert not window.dirty
+
+
+def test_export_bernardyn_package_from_the_gui(qapp, window, demo_project, tmp_path, monkeypatch):
+    pytest.importorskip("bernardyn")
+    from anisa.gui import main_window as mw
+
+    open_start(qapp, window, demo_project)
+    target = tmp_path / "plot"
+    monkeypatch.setattr(mw.QFileDialog, "getSaveFileName", lambda *a, **k: (str(target), ""))
+    assert window.export_bernardyn_dialog()
+    assert any(tmp_path.iterdir())
