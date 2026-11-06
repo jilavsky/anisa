@@ -502,7 +502,7 @@ field.
 | **3** ✅ | Fitting: least_squares with bounds, fittable background, revert, χ² per direction, Monte-Carlo uncertainty | Synthetic round trip recovers parameters (227 tests) |
 | **4** ✅ | GUI: main window, directions, populations, settings, I(Q) and orientation tabs, workers | Jan can load data, calculate and fit interactively (255 tests) |
 | **5** ✅ | Anisotropy tab (azimuthal and polar, measured overlay) | Igor's X/Y/Z scans are reproducible as special cases (290 tests) |
-| **6** | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena / Bernardyn |
+| **6** ✅ | Results HDF5 (§6) | Save, reopen, and read the data in pyIrena (318 tests); write-back into source files (§6 item 2) deferred, Bernardyn read check comes with Phase 9 |
 | — | **Milestone: testing release for Jan with real data** | |
 | 7 | `anisa.api`, CLI, JSON batch | Same result headless as in the GUI |
 | 8 | MCP server, Aida registration, skill file | An agent can run a fit end to end |

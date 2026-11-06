@@ -16,7 +16,7 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
 - `anisa/core` — numpy/scipy only (plus `pyirena.core.distributions` for size distributions).
   `engine.py` is the calculation engine (its module docstring explains the algorithms);
   `model.py` the dataclasses. `anisa/io` — `data.py` (reads only through `pyirena.io`),
-  `project.py` (`*.anisa.json`); results HDF5 comes in Phase 6. `anisa/demo.py` — synthetic data
+  `project.py` (`*.anisa.json`), `results.py` (`*.anisa.h5`, format in PLAN §6; group names are frozen). `anisa/demo.py` — synthetic data
   (`python -m anisa.demo`), also the fixture for fitting tests; `anisa/testsets.py` — catalogue of
   test systems with known truth (simple to complicated).
 - `benchmarks/` — `convergence.py` (accuracy against an independent brute force) and

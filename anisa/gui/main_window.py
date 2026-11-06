@@ -72,12 +72,16 @@ from anisa.gui.workers import (
 )
 from anisa.io.data import discover_curves, find_wavelength, load_direction
 from anisa.io.project import PROJECT_SUFFIX, load_project, save_project
+from anisa.io.results import RESULTS_SUFFIX, load_results, save_results
 
 log = logging.getLogger(__name__)
 
 DOCS_URL = "https://github.com/jilavsky/anisa"
 DATA_FILTER = "Scattering data (*.h5 *.hdf5 *.hdf *.nxs *.dat *.txt *.csv);;All files (*)"
-PROJECT_FILTER = f"Anisa projects (*{PROJECT_SUFFIX} *.json);;All files (*)"
+PROJECT_FILTER = (
+    f"Anisa projects and results (*{PROJECT_SUFFIX} *.json *{RESULTS_SUFFIX});;All files (*)"
+)
+RESULTS_FILTER = f"Anisa results (*{RESULTS_SUFFIX});;All files (*)"
 DEFAULT_Q_RANGE = (1.0e-4, 0.1)
 
 __all__ = ["MainWindow"]
@@ -275,6 +279,13 @@ class MainWindow(QMainWindow):
         self._action(file_menu, "&Save project", self.save_project, "Ctrl+S")
         self._action(
             file_menu, "Save project &as…", lambda: self.save_project(True), "Ctrl+Shift+S"
+        )
+        self._action(
+            file_menu,
+            "Save &results (HDF5)…",
+            self.save_results_dialog,
+            "Ctrl+E",
+            tip="One file with the data, model curves, parameters and errors of all directions",
         )
         file_menu.addSeparator()
         self._action(file_menu, "Add &data files…", self.add_data_dialog, "Ctrl+D")
@@ -752,8 +763,7 @@ class MainWindow(QMainWindow):
     def start_uncertainty(self) -> None:
         if self.last_fit is None or self._busy():
             return
-        current = [self._parameter_value(p.parameter) for p in self.last_fit.parameters]
-        if not np.allclose(current, self.last_fit.values(), rtol=1e-9, atol=0):
+        if not self._fit_is_current():
             self._show_message(
                 "Model changed",
                 "The parameters changed since the fit. Run the fit again (or revert), then ask "
@@ -920,31 +930,36 @@ class MainWindow(QMainWindow):
         try:
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                model = load_project(path)
+                from_results = str(path).lower().endswith((".h5", ".hdf5"))
+                model = load_results(path) if from_results else load_project(path)
         except (OSError, ValueError) as error:
             self.log(f"Could not open {path}: {error}")
             self._show_message("Could not open project", str(error))
             return False
         self.model = model
-        self.project_path = Path(path).resolve()
+        self.project_path = None if from_results else Path(path).resolve()
+        opened = Path(path).resolve()
         self.last_fit = None
         self.last_result = None
         self.last_stats = None
         self.engine.clear_cache()
-        self.state.add_recent_project(self.project_path)
-        self.state.set_folder("project", self.project_path)
+        if not from_results:  # a results file is not a project: Save project asks for a name
+            self.state.add_recent_project(opened)
+        self.state.set_folder("project", opened)
         self._rebuild_recent_menu()
         self._set_dirty(False)
         self._refresh_all()
         self._clear_errors()
         self._reset_views()
         for w in caught:
-            self.log(f"{self.project_path.name}: {w.message}")
+            self.log(f"{opened.name}: {w.message}")
         if caught:
             self._show_message(
                 "Project opened with warnings", "\n".join(str(w.message) for w in caught)
             )
-        self.log(f"Opened {self.project_path}")
+        self.log(
+            f"Opened {opened}" + (" (results file; data taken from it)" if from_results else "")
+        )
         self._ensure_default_scan()
         self.calculate()
         self._schedule_anisotropy()
@@ -972,6 +987,47 @@ class MainWindow(QMainWindow):
         self._rebuild_recent_menu()
         self._set_dirty(False)
         self.log(f"Saved {self.project_path}")
+        return True
+
+    def _fit_is_current(self) -> bool:
+        """True if the parameters still have the values of the last fit (so its errors apply)."""
+        if self.last_fit is None:
+            return False
+        current = [self._parameter_value(p.parameter) for p in self.last_fit.parameters]
+        return bool(np.allclose(current, self.last_fit.values(), rtol=1e-9, atol=0))
+
+    def save_results_dialog(self) -> bool:
+        """Write data, model curves, parameters and errors of all directions to one HDF5 file."""
+        if self._busy():
+            return False
+        if not self.model.directions:
+            self._show_message(
+                "Nothing to save", "Add data or directions first.", QMessageBox.Icon.Information
+            )
+            return False
+        stem = self.project_path.name.removesuffix(PROJECT_SUFFIX) if self.project_path else "anisa"
+        chosen, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save results",
+            str(Path(self.state.folder("results")) / f"{stem}{RESULTS_SUFFIX}"),
+            RESULTS_FILTER,
+        )
+        if not chosen:
+            return False
+        try:
+            path = save_results(
+                self.model,
+                chosen,
+                fit=self.last_fit if self._fit_is_current() else None,
+                engine=self.engine,
+            )
+        except (OSError, ValueError) as error:
+            self.log(f"Could not save results: {error}")
+            self._show_message("Could not save results", str(error))
+            return False
+        self.state.set_folder("results", path)
+        self.log(f"Saved results {path}")
+        self.statusBar().showMessage(f"Saved results to {path}", 6000)
         return True
 
     def create_demo_dialog(self) -> None:

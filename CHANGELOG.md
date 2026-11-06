@@ -6,6 +6,11 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Results file (Phase 6)**, `anisa.io.results` and File → Save results (HDF5)…: one
+  `<name>.anisa.h5` with an NXcanSAS `SASentry` per direction (data, `I_model`, per-population
+  curves, residuals, pyIrena fit-quality), shared parameters with limits and standard errors,
+  derived quantities, orientation profiles and the full model (pyIrena setup envelope).
+  pyIrena opens every direction; File → Open reads the file back with its data. 9 more tests.
 - **Test systems with known truth**, `anisa.testsets` (`python -m anisa.testsets FOLDER`, and
   File → Create test system in the GUI): prolate, oblate, prolate + oblate with different
   alignment, dense prolate with interference, isotropic spheres, and a 12-direction case. Each

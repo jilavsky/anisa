@@ -660,3 +660,23 @@ def test_test_system_menu_opens_a_start_project(qapp, window, tmp_path, monkeypa
     )
     assert window.model.populations[0].name == "needles, aspect 7"
     assert wait_until(qapp, lambda: settled(qapp, window))
+
+
+# -- results file ---------------------------------------------------------------------------------
+
+
+def test_save_results_then_open_them_again(qapp, window, demo_project, tmp_path, monkeypatch):
+    from anisa.gui import main_window as mw
+
+    open_start(qapp, window, demo_project)
+    target = tmp_path / "saved.anisa.h5"
+    monkeypatch.setattr(mw.QFileDialog, "getSaveFileName", lambda *a, **k: (str(target), ""))
+    assert window.save_results_dialog()
+    assert target.is_file()
+    chi_before = window.last_stats.chi_squared
+    assert window.open_project(target)
+    assert window.project_path is None  # a results file is not a project
+    assert wait_until(qapp, lambda: window.last_stats is not None)
+    assert wait_until(qapp, lambda: settled(qapp, window))
+    assert window.last_stats.chi_squared == pytest.approx(chi_before, rel=1e-9)
+    assert not window.dirty
