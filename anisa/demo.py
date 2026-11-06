@@ -123,13 +123,16 @@ def synthesize(
     return model
 
 
-def write_files(model: AnisaModel, folder: str | Path, fmt: str = "h5") -> list[Path]:
+def write_files(
+    model: AnisaModel, folder: str | Path, fmt: str = "h5", prefix: str = "demo"
+) -> list[Path]:
     """Write each direction's data to its own file and point ``direction.source`` at it.
 
     Args:
         model: model whose directions carry data (see :func:`synthesize`).
         folder: output folder, created if needed.
         fmt: ``"h5"`` (NXcanSAS, written with pyIrena's writer) or ``"dat"`` (text: Q, I, dI).
+        prefix: file names are ``{prefix}_dirNN.{fmt}``.
 
     Returns:
         The files written, in direction order.
@@ -142,7 +145,7 @@ def write_files(model: AnisaModel, folder: str | Path, fmt: str = "h5") -> list[
     for index, direction in enumerate(model.directions, start=1):
         if direction.q is None or direction.intensity is None or direction.uncertainty is None:
             raise ValueError(f"direction {index} has no data; call synthesize() first")
-        path = folder / f"demo_dir{index:02d}.{fmt}"
+        path = folder / f"{prefix}_dir{index:02d}.{fmt}"
         if fmt == "h5":
             create_nxcansas_file(
                 path,
@@ -181,20 +184,25 @@ def write_files(model: AnisaModel, folder: str | Path, fmt: str = "h5") -> list[
     return paths
 
 
-def perturb_model(model: AnisaModel, seed: int = 1, fraction: float = 0.25) -> AnisaModel:
+def perturb_model(
+    model: AnisaModel,
+    seed: int = 1,
+    fraction: float = 0.25,
+    paths: tuple[str, ...] = ("radius", "volume_fraction", "alpha_par2"),
+) -> AnisaModel:
     """A copy of ``model`` with its main parameters moved away from the truth and marked to fit.
 
-    Radius, volume fraction and the alpha-distribution sharpness of every population are
-    multiplied by a random factor within ``1 +- fraction``; their ``fit`` flags are set. Data and
+    The parameters in ``paths`` (default: radius, volume fraction and the alpha-distribution
+    sharpness) of every population are multiplied by a random factor within ``1 +- fraction``
+    and their ``fit`` flags are set; a sharpness of zero (isotropic) is left alone. Data and
     sources are kept. Used to check that a fit recovers the true parameters.
     """
     rng = np.random.default_rng(seed)
     start = copy.deepcopy(model)
     for population in start.populations:
-        paths = ["radius", "volume_fraction"]
-        if population.alpha_dist.par2 > 0:
-            paths.append("alpha_par2")
         for path in paths:
+            if population.get_parameter(path) == 0.0:
+                continue
             factor = 1.0 + fraction * rng.uniform(-1.0, 1.0)
             population.set_parameter(path, population.get_parameter(path) * factor)
             population.fit_spec(path).fit = True

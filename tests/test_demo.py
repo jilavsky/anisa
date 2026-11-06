@@ -113,3 +113,70 @@ def test_command_line_writes_the_demo(tmp_path, capsys):
     assert "demo.anisa.json" in capsys.readouterr().out
     assert len(list((tmp_path / "cli").glob("demo_dir*.dat"))) == 4
     assert load_project(tmp_path / "cli" / "demo.anisa.json").directions[3].q is not None
+
+
+# -- test systems ---------------------------------------------------------------------------
+
+from anisa import testsets  # noqa: E402
+from anisa.core.fitting import fit  # noqa: E402
+
+
+@pytest.mark.parametrize("name", testsets.list_systems())
+def test_every_test_system_writes_and_reloads(tmp_path, name):
+    truth = testsets.write_test_system(name, tmp_path, "dat")
+    folder = tmp_path / name
+    assert (folder / "TRUTH.txt").read_text().startswith(testsets.make_system(name).title)
+    model = load_project(truth)
+    start = load_project(folder / f"{name}_start.anisa.json")
+    assert len(model.directions) == len(start.directions) >= 6
+    assert all(d.q is not None and d.source is not None for d in model.directions)
+    assert any(p.fit_spec(path).fit for p in start.populations for path in p.parameter_paths())
+
+
+def test_unknown_system_is_rejected():
+    with pytest.raises(ValueError, match="unknown test system"):
+        testsets.make_system("nope")
+
+
+def test_many_has_twelve_directions_and_spheres_are_isotropic():
+    assert len(testsets.make_system("many").model.directions) == 12
+    system = testsets.make_system("spheres")
+    q = np.geomspace(system.q_min, system.q_max, 30)
+    result = Engine().evaluate(system.model, [q] * len(system.model.directions))
+    for direction in result.directions[1:]:
+        np.testing.assert_allclose(direction.intensity, result.directions[0].intensity, rtol=1e-6)
+
+
+def test_prolate_and_oblate_have_opposite_anisotropy():
+    """Along the axis a prolate particle is long (steeper decay), an oblate one thin (slower)."""
+    q = np.array([0.03])
+    ratios = {}
+    for name in ("prolate", "oblate"):
+        model = testsets.make_system(name).model
+        r = Engine().evaluate(model, [q] * len(model.directions))
+        ratios[name] = r.directions[0].intensity[0] / r.directions[3].intensity[0]  # normal / plane
+    assert ratios["prolate"] < 0.2 and ratios["oblate"] > 5.0
+
+
+def test_interference_system_differs_from_the_dilute_one():
+    system = testsets.make_system("interference")
+    q = np.geomspace(2e-3, 0.05, 40)
+    with_s = Engine().evaluate(system.model, [q] * 6).directions[3].intensity
+    system.model.populations[0].use_interference = False
+    without = Engine().evaluate(system.model, [q] * 6).directions[3].intensity
+    assert with_s[0] < 0.4 * without[0]  # S(0) = 1/(1 + pack) = 0.25
+    assert np.max(with_s / without) > 1.3  # the correlation hump
+
+
+@pytest.mark.parametrize("name", testsets.list_systems())
+def test_fit_recovers_each_test_system(tmp_path, name):
+    """A perturbed start returns to the truth within a few sigma, chi^2/N ~ 1."""
+    truth_path = testsets.write_test_system(name, tmp_path, "dat")
+    truth = load_project(truth_path)
+    start = load_project(truth_path.with_name(f"{name}_start.anisa.json"))
+    result = fit(start, engine=Engine())
+    assert 0.8 < result.reduced_chi_squared < 1.3
+    for item in result.parameters:
+        par = item.parameter
+        true_value = truth.populations[par.index].get_parameter(par.path)
+        assert abs(item.value - true_value) < 5.0 * item.std, (par.label, item.value, true_value)

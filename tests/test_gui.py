@@ -392,7 +392,7 @@ def test_manual_update_mode_waits_for_calculate(qapp, window, demo_project):
     row.value.editingFinished.emit()
     time.sleep(0.4)
     qapp.processEvents()
-    assert window.last_stats.chi_squared == before and "out of date" in window.status_label.text()
+    assert window.last_stats.chi_squared == before and "out of date" in window.calc_label.text()
     window.calculate()
     assert wait_until(qapp, lambda: window.last_stats.chi_squared != before)
 
@@ -619,3 +619,44 @@ def test_adding_data_creates_a_default_scan(qapp, window, demo_project):
     assert window.model.scans == []
     window.add_data_files([str(demo_project / "demo_dir01.h5")])
     assert len(window.model.scans) == 1 and len(window.model.scans[0].q_values) == 3
+
+
+# -- calculation indicator and test systems ------------------------------------------------------
+
+
+def test_calculation_indicator_shows_work_then_the_duration(qapp, window, demo_project):
+    open_start(qapp, window, demo_project)
+    assert not window.calc_bar.isVisibleTo(window)
+    assert window.calc_label.text().startswith("Up to date (")
+    row = window.populations_panel.editors[0].particle.row("radius")
+    row.value.setText("2600")
+    row.value.editingFinished.emit()
+    assert window._calc_timer.isActive()  # an edit is pending: the cue must already say so
+    assert window.calc_bar.isVisibleTo(window) and window.calc_label.text() == "Calculating…"
+    assert wait_until(qapp, lambda: settled(qapp, window))
+    assert wait_until(qapp, lambda: not window.calc_bar.isVisibleTo(window))
+    assert window.calc_label.text().startswith("Up to date (")
+
+
+def test_indicator_flags_an_out_of_date_model_when_auto_update_is_off(qapp, window, demo_project):
+    open_start(qapp, window, demo_project)
+    window.settings_panel.auto_update.setChecked(False)
+    window._on_edit(True)
+    assert not window._calc_timer.isActive()
+    assert "out of date" in window.calc_label.text()
+    window.calculate()
+    assert wait_until(qapp, lambda: settled(qapp, window))
+    assert window.calc_label.text().startswith("Up to date (")
+
+
+def test_test_system_menu_opens_a_start_project(qapp, window, tmp_path, monkeypatch):
+    from anisa.gui import main_window as mw
+
+    monkeypatch.setattr(mw.QFileDialog, "getExistingDirectory", lambda *a, **k: str(tmp_path))
+    window.create_test_system_dialog("prolate")
+    assert (tmp_path / "prolate" / "TRUTH.txt").exists()
+    assert wait_until(
+        qapp, lambda: window.last_stats is not None and window.last_stats.n_points > 0
+    )
+    assert window.model.populations[0].name == "needles, aspect 7"
+    assert wait_until(qapp, lambda: settled(qapp, window))

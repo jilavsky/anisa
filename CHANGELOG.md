@@ -6,6 +6,13 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **Test systems with known truth**, `anisa.testsets` (`python -m anisa.testsets FOLDER`, and
+  File → Create test system in the GUI): prolate, oblate, prolate + oblate with different
+  alignment, dense prolate with interference, isotropic spheres, and a 12-direction case. Each
+  writes data, a truth project, a perturbed start project and a `TRUTH.txt`. A fit from the start
+  recovers every parameter within 5σ (a test).
+- **Calculation indicator** in the status bar: a moving bar and "Calculating…" from the moment an
+  edit is pending, then "Up to date (0.12 s)"; "model out of date" when auto-update is off.
 - **Anisotropy view (Phase 5)**: `anisa.core.anisotropy` (scans of α_Q or ω_Q at any number of Q
   values, saved in the project; measured cuts that lie on a scan path are interpolated and
   overlaid) and an Anisotropy tab with polar and I(angle) views. 35 more tests (290 in total).

@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import logging
+import time
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 import anisa
-from anisa import demo
+from anisa import demo, testsets
 from anisa.core.engine import Engine
 from anisa.core.fitting import (
     FitResult,
@@ -97,6 +98,9 @@ class MainWindow(QMainWindow):
         self.last_fit: FitResult | None = None
         self._calc_thread: TaskThread | None = None
         self._calc_pending = False
+        self._out_of_date = False
+        self._calc_seconds: float | None = None
+        self._calc_started = 0.0
         self._fit_thread: TaskThread | None = None
         self._mc_thread: TaskThread | None = None
         self._aniso_thread: TaskThread | None = None
@@ -215,6 +219,14 @@ class MainWindow(QMainWindow):
         self.splitter = splitter
 
         self.status_label = QLabel("")
+        self.calc_label = QLabel("")
+        self.calc_bar = QProgressBar()  # indeterminate: shown while anything is (re)calculated
+        self.calc_bar.setRange(0, 0)
+        self.calc_bar.setTextVisible(False)
+        self.calc_bar.setFixedSize(90, 12)
+        self.calc_bar.setVisible(False)
+        self.statusBar().addPermanentWidget(self.calc_label)
+        self.statusBar().addPermanentWidget(self.calc_bar)
         self.statusBar().addPermanentWidget(self.status_label)
 
         # -- wiring ------------------------------------------------------------------------
@@ -272,6 +284,16 @@ class MainWindow(QMainWindow):
             self.create_demo_dialog,
             tip="Write synthetic multi-direction data with known parameters and open it",
         )
+        test_menu = file_menu.addMenu("Create &test system")
+        test_menu.setToolTip("Synthetic data with known parameters, from simple to complicated")
+        for name in testsets.list_systems():
+            title = testsets.make_system(name).title
+            self._action(
+                test_menu,
+                f"{name}: {title}",
+                lambda _checked=False, n=name: self.create_test_system_dialog(n),
+                tip="Write the data, the truth and a perturbed start (see TRUTH.txt) and open it",
+            )
         file_menu.addSeparator()
         self._action(file_menu, "&Quit", self.close, "Ctrl+Q")
         model_menu = bar.addMenu("&Model")
@@ -475,11 +497,44 @@ class MainWindow(QMainWindow):
     # calculation
     # ==========================================================================================
 
+    def _calculating(self) -> bool:
+        """True while a model or scan calculation runs or is waiting to start."""
+        return (
+            self._calc_thread is not None
+            or self._aniso_thread is not None
+            or self._calc_timer.isActive()
+            or self._aniso_timer.isActive()
+            or self._calc_pending
+            or self._aniso_pending
+        )
+
+    def _update_calc_indicator(self) -> None:
+        """Status-bar cue: a moving bar while calculating, then how long the last update took.
+
+        Without it a fast model gives no sign that the plot is current, and a slow one (many
+        directions, large grids) no sign that it is still working.
+        """
+        if self._calculating():
+            self.calc_bar.setVisible(True)
+            self.calc_label.setStyleSheet("")
+            self.calc_label.setText("Calculating…")
+        elif self._out_of_date:
+            self.calc_bar.setVisible(False)
+            self.calc_label.setStyleSheet("color: #c06000; font-weight: bold;")
+            self.calc_label.setText("model out of date: press Calculate")
+        else:
+            self.calc_bar.setVisible(False)
+            self.calc_label.setStyleSheet("")
+            seconds = self._calc_seconds
+            self.calc_label.setText("" if seconds is None else f"Up to date ({seconds:.2f} s)")
+
     def _schedule_calculation(self) -> None:
         if self.settings_panel.auto_update.isChecked():
+            self._out_of_date = False
             self._calc_timer.start()
         else:
-            self.status_label.setText("model out of date: press Calculate")
+            self._out_of_date = True
+        self._update_calc_indicator()
 
     def calculate(self) -> None:
         """Calculate the model along every direction (in a worker thread)."""
@@ -488,6 +543,8 @@ class MainWindow(QMainWindow):
             self._calc_pending = True
             return
         self._reap_threads()
+        self._out_of_date = False
+        self._calc_started = time.perf_counter()
         snapshot = copy.deepcopy(self.model)
         thread = TaskThread(calculation_job(snapshot, self.engine, self._q_list()))
         thread.done.connect(self._calculation_done)
@@ -496,6 +553,7 @@ class MainWindow(QMainWindow):
         self._calc_thread = thread
         self._threads.append(thread)
         thread.start()
+        self._update_calc_indicator()
 
     def _calculation_done(self, output: CalcOutput) -> None:
         # a structure change while the worker ran makes the result stale: recalculate
@@ -506,6 +564,7 @@ class MainWindow(QMainWindow):
             return
         self.last_result = output.result
         self.last_stats = output.statistics
+        self._calc_seconds = time.perf_counter() - self._calc_started
         self._update_status()
         self._refresh_plots()
         self.directions_panel.refresh_row_values()
@@ -513,6 +572,7 @@ class MainWindow(QMainWindow):
     def _calculation_failed(self, message: str) -> None:
         self.log(f"Calculation failed: {message}")
         self.status_label.setText(f"calculation failed: {message}")
+        self._calc_seconds = None
 
     def _calculation_finished(self) -> None:
         # The thread object stays in self._threads: dropping the last reference inside its own
@@ -522,6 +582,7 @@ class MainWindow(QMainWindow):
         if self._calc_pending:
             self._calc_pending = False
             self._schedule_calculation()
+        self._update_calc_indicator()
 
     # ==========================================================================================
     # anisotropy scans
@@ -543,6 +604,7 @@ class MainWindow(QMainWindow):
         self._aniso_stale = True
         if self._anisotropy_visible():
             self._aniso_timer.start()
+        self._update_calc_indicator()
 
     def _ensure_default_scan(self) -> None:
         """Offer a first scan once there are data: three Q values across the measured range."""
@@ -573,6 +635,7 @@ class MainWindow(QMainWindow):
         self._aniso_thread = thread
         self._threads.append(thread)
         thread.start()
+        self._update_calc_indicator()
 
     def _anisotropy_failed(self, message: str) -> None:
         self.log(f"Anisotropy calculation failed: {message}")
@@ -583,6 +646,7 @@ class MainWindow(QMainWindow):
         if self._aniso_pending:
             self._aniso_pending = False
             self._schedule_anisotropy()
+        self._update_calc_indicator()
 
     # ==========================================================================================
     # fit, revert, uncertainty
@@ -927,6 +991,27 @@ class MainWindow(QMainWindow):
             "perturbed start with fit flags set. Opening the start; press Fit."
         )
         self.open_project(project.with_name("demo_start.anisa.json"))
+
+    def create_test_system_dialog(self, name: str) -> None:
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            f"Folder for the test system '{name}' (a subfolder is created)",
+            self.state.folder("demo"),
+        )
+        if not folder:
+            return
+        try:
+            truth = testsets.write_test_system(name, folder)
+        except (OSError, ValueError) as error:
+            self._show_message("Could not write the test system", str(error))
+            return
+        self.state.set_folder("demo", folder)
+        self.log(
+            f"Wrote test system '{name}' to {truth.parent}: {truth.name} is the truth, "
+            f"{name}_start.anisa.json a perturbed start with fit flags set, TRUTH.txt describes "
+            "it. Opening the start; press Fit."
+        )
+        self.open_project(truth.with_name(f"{name}_start.anisa.json"))
 
     def _rebuild_recent_menu(self) -> None:
         self.recent_menu.clear()
