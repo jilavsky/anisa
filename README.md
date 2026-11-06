@@ -8,9 +8,10 @@ of the Igor Pro AnisoSAS macros (theory: A. J. Allen, NIST 2001). Compared with 
 version it is faster, uses multiple cores, and has no fixed limit on the number of directions
 or populations.
 
-> **Status: early development (pre-alpha).** The calculation engine, data input, project
-> files, fitting and the GUI are done and tested; result files, the command line and the MCP server are next. See [PLAN.md](PLAN.md)
-> for the plan and progress.
+> **Status: beta (0.0.1b1).** The engine, data input, fitting, GUI, results files, command line,
+> MCP server and Bernardyn export are done and tested on synthetic data; it has not yet been
+> validated on real measurements, so expect changes. See
+> [PLAN.md](https://github.com/jilavsky/anisa/blob/main/PLAN.md) for the plan and progress.
 
 Anisa is part of the pyIrena family:
 - **[pyIrena](https://github.com/jilavsky/pyirena)** — data input (NXcanSAS HDF5 and ASCII) and
@@ -104,7 +105,7 @@ along_z, across_z = (d.intensity for d in result.directions)   # I(Q) in 1/cm
 ```
 
 Any number of directions and populations is allowed. Parameters and their Igor names:
-[docs/parameters.md](docs/parameters.md).
+[docs/parameters.md](https://github.com/jilavsky/anisa/blob/main/docs/parameters.md).
 
 Synthetic multi-direction data with known parameters, for trying things out:
 

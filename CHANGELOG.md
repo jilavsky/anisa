@@ -5,6 +5,10 @@ All notable changes to Anisa are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.0.1b1] - 2026-11-06
+
+First beta release (version number reset from the development placeholder 0.1.0.dev0).
+
 ### Added
 - **Bernardyn export (Phase 9)**: File → Export Bernardyn package…, `anisa export-bernardyn FILE
   PACKAGE [--recipe raw_iq|guinier|porod|kratky…]` and the `anisa_export_bernardyn` MCP tool
