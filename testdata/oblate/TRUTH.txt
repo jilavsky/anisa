@@ -1,0 +1,26 @@
+Oblate spheroids, mildly aligned along the normal
+=================================================
+
+One population, aspect 1/6.7 (equatorial radius 400 A, thin semi-axis 60 A), volume fraction 1 %, contrast 1e11 cm^-2. The disk axes follow |cos alpha|^4 around the sample normal: the disks lie flat. Along the normal Q sees the thickness (a slow decay, bright at high Q), in plane the large diameter (a steep, early decay), the opposite of the prolate case.
+
+Population 1: platelets, aspect 1/6.7 (oblate)
+  Radius            400 A (equatorial)
+  Beta              0.15   (semi-axes R, R, beta R)
+  Volume Fract      0.01
+  Delta rho         1e+11 cm^-2
+  Size distribution none {}
+  P alpha           par1 0 deg, par2 4, par3 0
+  B omega           par1 0 deg, par2 0, par3 0
+
+Directions (alpha_Q, omega_Q in deg; each has background 0.01 1/cm):
+  Q along normal (alpha 0)        0.0    0.0
+  alpha 30, omega 0              30.0    0.0
+  alpha 60, omega 0              60.0    0.0
+  in plane, omega 0 (x)          90.0    0.0
+  in plane, omega 45             90.0   45.0
+  in plane, omega 90 (y)         90.0   90.0
+
+Data: Q 0.001 to 0.3 1/A, 120 log-spaced points, relative noise 0.02 (also the stored uncertainty), seed 0.
+The *_start.anisa.json project has radius, volume fraction and orientation sharpness (plus eta and pack where used) moved by up to 25 % and set to fit.
+
+Correct fit result: every fitted parameter returns to the values above within about two standard deviations, and chi^2/N is about 1.

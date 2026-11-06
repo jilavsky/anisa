@@ -1,0 +1,35 @@
+A prolate and an oblate population with different alignment
+===========================================================
+
+Needles (aspect 8, equatorial radius 50 A, 0.6 vol %, contrast 1e11) strongly aligned along the normal (|cos alpha|^30), plus platelets (aspect 1/8.3, equatorial radius 450 A, 1.2 vol %, contrast 0.6e11) whose axes lie in the substrate plane along x, only weakly aligned (|cos|^3 in both alpha and omega). The platelets dominate at low Q, the needles at high Q; the in-plane azimuths differ because the platelet axes prefer x.
+
+Population 1: needles, strongly aligned (prolate)
+  Radius            50 A (equatorial)
+  Beta              8   (semi-axes R, R, beta R)
+  Volume Fract      0.006
+  Delta rho         1e+11 cm^-2
+  Size distribution none {}
+  P alpha           par1 0 deg, par2 30, par3 0
+  B omega           par1 0 deg, par2 0, par3 0
+
+Population 2: platelets, weakly aligned (oblate)
+  Radius            450 A (equatorial)
+  Beta              0.12   (semi-axes R, R, beta R)
+  Volume Fract      0.012
+  Delta rho         6e+10 cm^-2
+  Size distribution none {}
+  P alpha           par1 90 deg, par2 3, par3 0
+  B omega           par1 0 deg, par2 3, par3 0
+
+Directions (alpha_Q, omega_Q in deg; each has background 0.01 1/cm):
+  Q along normal (alpha 0)        0.0    0.0
+  alpha 30, omega 0              30.0    0.0
+  alpha 60, omega 0              60.0    0.0
+  in plane, omega 0 (x)          90.0    0.0
+  in plane, omega 45             90.0   45.0
+  in plane, omega 90 (y)         90.0   90.0
+
+Data: Q 0.001 to 0.3 1/A, 120 log-spaced points, relative noise 0.02 (also the stored uncertainty), seed 0.
+The *_start.anisa.json project has radius, volume fraction and orientation sharpness (plus eta and pack where used) moved by up to 25 % and set to fit.
+
+Correct fit result: every fitted parameter returns to the values above within about two standard deviations, and chi^2/N is about 1.

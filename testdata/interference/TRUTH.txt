@@ -1,0 +1,27 @@
+Dense prolate population with interference
+==========================================
+
+Aspect 5 (equatorial radius 100 A), volume fraction 12 %, contrast 1e11 cm^-2, axes |cos alpha|^6 around the normal. The Irena interference factor with distance eta = 450 A and packing 3 suppresses the low-Q intensity (S(0) = 1/(1+3) = 0.25) and adds a correlation hump near Q = 4.5/eta = 0.01 1/A. Without it the model is the dilute one, so a fit that ignores interference gets volume fraction and size wrong.
+
+Population 1: dense needles (prolate)
+  Radius            100 A (equatorial)
+  Beta              5   (semi-axes R, R, beta R)
+  Volume Fract      0.12
+  Delta rho         1e+11 cm^-2
+  Size distribution none {}
+  P alpha           par1 0 deg, par2 6, par3 0
+  B omega           par1 0 deg, par2 0, par3 0
+  Interference      eta 450 A, pack 3
+
+Directions (alpha_Q, omega_Q in deg; each has background 0.01 1/cm):
+  Q along normal (alpha 0)        0.0    0.0
+  alpha 30, omega 0              30.0    0.0
+  alpha 60, omega 0              60.0    0.0
+  in plane, omega 0 (x)          90.0    0.0
+  in plane, omega 45             90.0   45.0
+  in plane, omega 90 (y)         90.0   90.0
+
+Data: Q 0.002 to 0.3 1/A, 120 log-spaced points, relative noise 0.02 (also the stored uncertainty), seed 0.
+The *_start.anisa.json project has radius, volume fraction and orientation sharpness (plus eta and pack where used) moved by up to 25 % and set to fit.
+
+Correct fit result: every fitted parameter returns to the values above within about two standard deviations, and chi^2/N is about 1.

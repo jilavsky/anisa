@@ -1,0 +1,458 @@
+{
+  "_anisa_project": {
+    "format": "anisa-project",
+    "schema_version": 1,
+    "saved_by": "anisa 0.1.0.dev0",
+    "saved_at": "2026-11-06T11:53:03-06:00"
+  },
+  "model": {
+    "schema_version": 1,
+    "settings": {
+      "formula": "4c",
+      "n_alpha": 64,
+      "n_omega": 128,
+      "points_per_period": 48,
+      "wavelength": 1.0,
+      "n_threads": 0
+    },
+    "directions": [
+      {
+        "label": "Q along normal (alpha 0)",
+        "alpha_q": 0.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir01.h5",
+          "internal_path": "entry/dir01/sasdata",
+          "variant": "default",
+          "fingerprint": "f2dc003f89766917e68286f4bdc3d2fe4aaf64349982c50962aa727e410489a0",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 30, omega 0",
+        "alpha_q": 30.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir02.h5",
+          "internal_path": "entry/dir02/sasdata",
+          "variant": "default",
+          "fingerprint": "e583c89fde7760582350586d0bccb079ac19f5db5afb7bae481595042cc0ec87",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 60, omega 0",
+        "alpha_q": 60.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir03.h5",
+          "internal_path": "entry/dir03/sasdata",
+          "variant": "default",
+          "fingerprint": "bdd29454f9c1a92968ba1be553ea59829141f91d8178068df92f39caf051e9f7",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 0 (x)",
+        "alpha_q": 90.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir04.h5",
+          "internal_path": "entry/dir04/sasdata",
+          "variant": "default",
+          "fingerprint": "a35e98250bf51a16236ee9d77a46eb9aba4ff29ac687dea58a21a5466fb1b74f",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 45",
+        "alpha_q": 90.0,
+        "omega_q": 45.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir05.h5",
+          "internal_path": "entry/dir05/sasdata",
+          "variant": "default",
+          "fingerprint": "0905d4da2fb099ee1e70017612fb42aab3c1e19629b4d353495e2ce8749d0654",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 90 (y)",
+        "alpha_q": 90.0,
+        "omega_q": 90.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir06.h5",
+          "internal_path": "entry/dir06/sasdata",
+          "variant": "default",
+          "fingerprint": "402b43d57ba6b2a0e5b2926d5631672de351b1ff5b34924a0047e2f2d1f2a00b",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 10, omega 0",
+        "alpha_q": 10.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir07.h5",
+          "internal_path": "entry/dir07/sasdata",
+          "variant": "default",
+          "fingerprint": "8d1c019a9606c68551dc4c47648ec33a1f81e386409755186aeeb0af89905ab9",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 20, omega 0",
+        "alpha_q": 20.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir08.h5",
+          "internal_path": "entry/dir08/sasdata",
+          "variant": "default",
+          "fingerprint": "2a176dd5d2f5666555e32a09403395d0a6124901f266f3ebe6ca068465f40a23",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 40, omega 0",
+        "alpha_q": 40.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir09.h5",
+          "internal_path": "entry/dir09/sasdata",
+          "variant": "default",
+          "fingerprint": "0e365bc8e69c97b1881a435f65ea77896a03e0321df4cc68dbe19a6307abea31",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 50, omega 0",
+        "alpha_q": 50.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir10.h5",
+          "internal_path": "entry/dir10/sasdata",
+          "variant": "default",
+          "fingerprint": "8729404a25bee57f5371eec477202de96b52fb4ea692be418f6b82fcb18e35a2",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 70, omega 0",
+        "alpha_q": 70.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir11.h5",
+          "internal_path": "entry/dir11/sasdata",
+          "variant": "default",
+          "fingerprint": "771fecb5e08d6654cb9221a2e1c6a9c630b63214177f6434f89a772265ddf96c",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 80, omega 0",
+        "alpha_q": 80.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "many_dir12.h5",
+          "internal_path": "entry/dir12/sasdata",
+          "variant": "default",
+          "fingerprint": "f145366131941490831a39e325ef60287a6cfb5aad8fb3de634b6d100a8cfd44",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "populations": [
+      {
+        "name": "needles, strongly aligned",
+        "delta_rho": 100000000000.0,
+        "size_dist": {
+          "type": "none",
+          "params": {},
+          "n_bins": 100,
+          "weighting": "volume"
+        },
+        "alpha_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "omega_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "use_interference": false,
+        "radius": {
+          "value": 50.29554061750642,
+          "fit": true,
+          "min": 10.0,
+          "max": 10000000.0
+        },
+        "volume_fraction": {
+          "value": 0.007351391088977806,
+          "fit": true,
+          "min": 1e-06,
+          "max": 1.0
+        },
+        "beta": {
+          "value": 8.0,
+          "fit": false,
+          "min": 0.02,
+          "max": 50.0
+        },
+        "eta": {
+          "value": 100.0,
+          "fit": false,
+          "min": 1.0,
+          "max": 100000.0
+        },
+        "pack": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 16.0
+        },
+        "alpha_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 90.0
+        },
+        "alpha_par2": {
+          "value": 24.662394190794508,
+          "fit": true,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "alpha_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        },
+        "omega_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 360.0
+        },
+        "omega_par2": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "omega_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        }
+      },
+      {
+        "name": "platelets, weakly aligned",
+        "delta_rho": 60000000000.0,
+        "size_dist": {
+          "type": "none",
+          "params": {},
+          "n_bins": 100,
+          "weighting": "volume"
+        },
+        "alpha_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "omega_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "use_interference": false,
+        "radius": {
+          "value": 550.9461256058798,
+          "fit": true,
+          "min": 10.0,
+          "max": 10000000.0
+        },
+        "volume_fraction": {
+          "value": 0.010870988712062914,
+          "fit": true,
+          "min": 1e-06,
+          "max": 1.0
+        },
+        "beta": {
+          "value": 0.12,
+          "fit": false,
+          "min": 0.02,
+          "max": 50.0
+        },
+        "eta": {
+          "value": 100.0,
+          "fit": false,
+          "min": 1.0,
+          "max": 100000.0
+        },
+        "pack": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 16.0
+        },
+        "alpha_par1": {
+          "value": 90.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 90.0
+        },
+        "alpha_par2": {
+          "value": 2.8849896734588634,
+          "fit": true,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "alpha_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        },
+        "omega_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 360.0
+        },
+        "omega_par2": {
+          "value": 3.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "omega_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        }
+      }
+    ],
+    "scans": []
+  }
+}

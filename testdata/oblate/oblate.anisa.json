@@ -1,0 +1,241 @@
+{
+  "_anisa_project": {
+    "format": "anisa-project",
+    "schema_version": 1,
+    "saved_by": "anisa 0.1.0.dev0",
+    "saved_at": "2026-11-06T11:53:03-06:00"
+  },
+  "model": {
+    "schema_version": 1,
+    "settings": {
+      "formula": "4c",
+      "n_alpha": 64,
+      "n_omega": 128,
+      "points_per_period": 48,
+      "wavelength": 1.0,
+      "n_threads": 0
+    },
+    "directions": [
+      {
+        "label": "Q along normal (alpha 0)",
+        "alpha_q": 0.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir01.h5",
+          "internal_path": "entry/dir01/sasdata",
+          "variant": "default",
+          "fingerprint": "f4b4fe042dd23c806d48d2c1b1353cbc691f43053739b6664cb168035f4930a0",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 30, omega 0",
+        "alpha_q": 30.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir02.h5",
+          "internal_path": "entry/dir02/sasdata",
+          "variant": "default",
+          "fingerprint": "47f442dc0e2d2e584aa365212768361f5e12c6f9a7029b6bf393350ca49fc394",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 60, omega 0",
+        "alpha_q": 60.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir03.h5",
+          "internal_path": "entry/dir03/sasdata",
+          "variant": "default",
+          "fingerprint": "69ba818a7a81f76d8badc5a099321728d7e0f0c31058876175c83cca14301a38",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 0 (x)",
+        "alpha_q": 90.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir04.h5",
+          "internal_path": "entry/dir04/sasdata",
+          "variant": "default",
+          "fingerprint": "68a6e1703d23f0a6b7012678163da4989f4f6736c61d4121ab5f5a914976900a",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 45",
+        "alpha_q": 90.0,
+        "omega_q": 45.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir05.h5",
+          "internal_path": "entry/dir05/sasdata",
+          "variant": "default",
+          "fingerprint": "5e1904048b4d2549bceabd1437da078b1b51806f269c08ac0b4f48e001bdd88f",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 90 (y)",
+        "alpha_q": 90.0,
+        "omega_q": 90.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "oblate_dir06.h5",
+          "internal_path": "entry/dir06/sasdata",
+          "variant": "default",
+          "fingerprint": "0d4698d5eb6e68f66b2b3553b041091d3901e6b52b8e0c9cd2dba1c924a7a667",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "populations": [
+      {
+        "name": "platelets, aspect 1/6.7",
+        "delta_rho": 100000000000.0,
+        "size_dist": {
+          "type": "none",
+          "params": {},
+          "n_bins": 100,
+          "weighting": "volume"
+        },
+        "alpha_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "omega_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "use_interference": false,
+        "radius": {
+          "value": 400.0,
+          "fit": false,
+          "min": 10.0,
+          "max": 10000000.0
+        },
+        "volume_fraction": {
+          "value": 0.01,
+          "fit": false,
+          "min": 1e-06,
+          "max": 1.0
+        },
+        "beta": {
+          "value": 0.15,
+          "fit": false,
+          "min": 0.02,
+          "max": 50.0
+        },
+        "eta": {
+          "value": 100.0,
+          "fit": false,
+          "min": 1.0,
+          "max": 100000.0
+        },
+        "pack": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 16.0
+        },
+        "alpha_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 90.0
+        },
+        "alpha_par2": {
+          "value": 4.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "alpha_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        },
+        "omega_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 360.0
+        },
+        "omega_par2": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "omega_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        }
+      }
+    ],
+    "scans": []
+  }
+}

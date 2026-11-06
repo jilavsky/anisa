@@ -1,0 +1,241 @@
+{
+  "_anisa_project": {
+    "format": "anisa-project",
+    "schema_version": 1,
+    "saved_by": "anisa 0.1.0.dev0",
+    "saved_at": "2026-11-06T11:53:03-06:00"
+  },
+  "model": {
+    "schema_version": 1,
+    "settings": {
+      "formula": "4c",
+      "n_alpha": 64,
+      "n_omega": 128,
+      "points_per_period": 48,
+      "wavelength": 1.0,
+      "n_threads": 0
+    },
+    "directions": [
+      {
+        "label": "Q along normal (alpha 0)",
+        "alpha_q": 0.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir01.h5",
+          "internal_path": "entry/dir01/sasdata",
+          "variant": "default",
+          "fingerprint": "4acec1379fcbfe71d2ce59ffaaefd35ece8d8ec815193157a0dc7d50330d91de",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 30, omega 0",
+        "alpha_q": 30.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir02.h5",
+          "internal_path": "entry/dir02/sasdata",
+          "variant": "default",
+          "fingerprint": "77a25f61ea871d252609b2aca1c1952346a85519275aa85cb077f99b4db3186e",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "alpha 60, omega 0",
+        "alpha_q": 60.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir03.h5",
+          "internal_path": "entry/dir03/sasdata",
+          "variant": "default",
+          "fingerprint": "3439cfda05f3e18007bccaac21eb9578abfd986e51b53b1b7857176b3228c3a2",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 0 (x)",
+        "alpha_q": 90.0,
+        "omega_q": 0.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir04.h5",
+          "internal_path": "entry/dir04/sasdata",
+          "variant": "default",
+          "fingerprint": "151bffae978baee1af03606bb35eb0457917324c6b4ebcd844d580b46c7b8b66",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 45",
+        "alpha_q": 90.0,
+        "omega_q": 45.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir05.h5",
+          "internal_path": "entry/dir05/sasdata",
+          "variant": "default",
+          "fingerprint": "5ac77559a60f986976a7e55e1d791a1a2f66f27277ebfa72a4556b16b481da26",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      },
+      {
+        "label": "in plane, omega 90 (y)",
+        "alpha_q": 90.0,
+        "omega_q": 90.0,
+        "q_min": null,
+        "q_max": null,
+        "use": true,
+        "source": {
+          "path": "interference_dir06.h5",
+          "internal_path": "entry/dir06/sasdata",
+          "variant": "default",
+          "fingerprint": "551d81d5080d788c92ad8f49734f93d0672da63abdbf484c059d89fce421f1a9",
+          "q_unit": "1/A",
+          "error_fraction": 0.05
+        },
+        "background": {
+          "value": 0.01,
+          "fit": false,
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "populations": [
+      {
+        "name": "dense needles",
+        "delta_rho": 100000000000.0,
+        "size_dist": {
+          "type": "none",
+          "params": {},
+          "n_bins": 100,
+          "weighting": "volume"
+        },
+        "alpha_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "omega_dist": {
+          "mode": "parametric",
+          "table": []
+        },
+        "use_interference": true,
+        "radius": {
+          "value": 100.0,
+          "fit": false,
+          "min": 10.0,
+          "max": 10000000.0
+        },
+        "volume_fraction": {
+          "value": 0.12,
+          "fit": false,
+          "min": 1e-06,
+          "max": 1.0
+        },
+        "beta": {
+          "value": 5.0,
+          "fit": false,
+          "min": 0.02,
+          "max": 50.0
+        },
+        "eta": {
+          "value": 450.0,
+          "fit": false,
+          "min": 1.0,
+          "max": 100000.0
+        },
+        "pack": {
+          "value": 3.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 16.0
+        },
+        "alpha_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 90.0
+        },
+        "alpha_par2": {
+          "value": 6.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "alpha_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        },
+        "omega_par1": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 360.0
+        },
+        "omega_par2": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 200.0
+        },
+        "omega_par3": {
+          "value": 0.0,
+          "fit": false,
+          "min": 0.0,
+          "max": 100.0
+        }
+      }
+    ],
+    "scans": []
+  }
+}

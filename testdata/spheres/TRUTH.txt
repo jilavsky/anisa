@@ -1,0 +1,26 @@
+Isotropic polydisperse spheres
+==============================
+
+Spheres, mean radius 150 A with a Irena log-normal size distribution (min size 10 A, sdeviation 0.25), volume fraction 2 %, contrast 1e11 cm^-2. The scattering is isotropic: all six directions must agree within noise. A sanity check for size, volume fraction and contrast.
+
+Population 1: polydisperse spheres (spherical)
+  Radius            150 A (equatorial)
+  Beta              1   (semi-axes R, R, beta R)
+  Volume Fract      0.02
+  Delta rho         1e+11 cm^-2
+  Size distribution lognormal {'min_size': 10.0, 'sdeviation': 0.25}
+  P alpha           par1 0 deg, par2 0, par3 0
+  B omega           par1 0 deg, par2 0, par3 0
+
+Directions (alpha_Q, omega_Q in deg; each has background 0.01 1/cm):
+  Q along normal (alpha 0)        0.0    0.0
+  alpha 30, omega 0              30.0    0.0
+  alpha 60, omega 0              60.0    0.0
+  in plane, omega 0 (x)          90.0    0.0
+  in plane, omega 45             90.0   45.0
+  in plane, omega 90 (y)         90.0   90.0
+
+Data: Q 0.002 to 0.3 1/A, 120 log-spaced points, relative noise 0.02 (also the stored uncertainty), seed 0.
+The *_start.anisa.json project has radius, volume fraction and orientation sharpness (plus eta and pack where used) moved by up to 25 % and set to fit.
+
+Correct fit result: every fitted parameter returns to the values above within about two standard deviations, and chi^2/N is about 1.
