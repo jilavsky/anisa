@@ -6,6 +6,9 @@ All notable changes to Anisa are documented here. Versions follow
 ## [Unreleased]
 
 ### Added
+- **`anisa.api` and the `anisa` command (Phase 7)**: `info`, `calc`, `fit` (`--mc N`,
+  `--update-project`, results file written next to the project), `anisotropy` (saved or ad hoc
+  scan, `--csv`) and `testdata`. JSON in and out, the same functions the MCP server will call.
 - **Results file (Phase 6)**, `anisa.io.results` and File → Save results (HDF5)…: one
   `<name>.anisa.h5` with an NXcanSAS `SASentry` per direction (data, `I_model`, per-population
   curves, residuals, pyIrena fit-quality), shared parameters with limits and standard errors,

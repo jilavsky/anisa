@@ -19,6 +19,9 @@ is the Python successor of Igor AnisoSAS. Jan's cross-repo conventions are in
   `project.py` (`*.anisa.json`), `results.py` (`*.anisa.h5`, format in PLAN §6; group names are frozen). `anisa/demo.py` — synthetic data
   (`python -m anisa.demo`), also the fixture for fitting tests; `anisa/testsets.py` — catalogue of
   test systems with known truth (simple to complicated).
+- `anisa/api.py` (JSON in/out functions) and `anisa/cli.py` (the `anisa` command) are the headless
+  surface: no Qt, and the CLI and MCP server share the API; keep return values JSON-serialisable
+  (test_cli checks this).
 - `benchmarks/` — `convergence.py` (accuracy against an independent brute force) and
   `performance.py`. Re-run both after any change to the engine's numerics.
 - `docs/parameters.md` — Igor ↔ Anisa parameter mapping.

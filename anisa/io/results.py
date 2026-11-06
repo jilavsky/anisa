@@ -409,7 +409,10 @@ def read_summary(path: str | Path) -> ResultsSummary:
         if "fit" in shared:
             fit = shared["fit"]
             summary.fit = {name: dataset[()].item() for name, dataset in fit.items()}
-            summary.fit.update({key: fit.attrs[key] for key in fit.attrs if key != "NX_class"})
+            for key in fit.attrs:
+                if key != "NX_class":
+                    value = fit.attrs[key]
+                    summary.fit[key] = value.item() if isinstance(value, np.generic) else value
         for key in sorted(k for k in f["entry"] if k.startswith("dir")):
             process = f["entry"][key].get("anisa_results")
             summary.direction_quality.append(

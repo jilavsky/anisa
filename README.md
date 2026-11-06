@@ -43,8 +43,10 @@ Python 3.10–3.13. The GUI uses PySide6 (never PyQt6).
 anisa-gui                      # or: python -m anisa.gui
 ```
 
-1. *File → Create demo data…* writes a synthetic data set with known parameters and opens it
-   with perturbed starting values; press **Fit** to see it recover them. (Or *Add data…* /
+1. *File → Create test system* writes a synthetic data set with known parameters (prolate,
+   oblate, both with different alignment, interference, spheres, 12 directions; `TRUTH.txt`
+   lists the answer) and opens it with perturbed starting values; press **Fit** to see it
+   recover them. *Create demo data…* does the same for the three-population coating example. (Or *Add data…* /
    drag files onto the directions table to load your own: NXcanSAS HDF5 or text.)
 2. Give each direction its angles α_Q (from the sample normal) and ω_Q (azimuth) in the table.
 3. Set the particle parameters of each population, tick **Fit?** for those to vary, and press
@@ -53,6 +55,23 @@ anisa-gui                      # or: python -m anisa.gui
 4. The **Anisotropy** tab shows the model as a function of the direction of Q (polar plots, or
    I(angle)) with your measured cuts on top, which is the quickest check that the orientation
    distributions make sense.
+
+After a fit, *File → Save results (HDF5)…* writes one `NAME.anisa.h5` with the data, model
+curves, parameters and errors of all directions (an NXcanSAS entry per direction, so pyIrena
+opens each); *File → Open* reads it back.
+
+## Command line
+
+```bash
+anisa testdata folder --system prolate_oblate        # synthetic data with known truth
+anisa info    folder/prolate_oblate/prolate_oblate_start.anisa.json
+anisa fit     folder/prolate_oblate/prolate_oblate_start.anisa.json --mc 20 --text
+anisa calc    project.anisa.json --results out.anisa.h5
+anisa anisotropy project.anisa.json --sweep alpha --fixed 0 --q 0.01 0.05 --csv scan.csv
+```
+
+The project file is the one the GUI saves; every command prints JSON (`anisa.api` has the same
+functions for Python).
 
 ## Example
 

@@ -67,6 +67,11 @@ def test_core_and_io_have_no_gui_imports(layer):
     assert not offenders, f"{layer} must stay numpy/scipy/h5py only: {offenders}"
 
 
+@pytest.mark.parametrize("module", ["api.py", "cli.py", "testsets.py", "demo.py"])
+def test_headless_modules_have_no_gui_imports(module):
+    assert not GUI_IMPORT.search((PACKAGE / module).read_text("utf-8")), module
+
+
 def test_pyirena_reader_api_available():
     """Anisa reads data through pyIrena's public, Qt-free reader."""
     from pyirena.io import ScatteringRecord, discover_scattering, load_scattering
