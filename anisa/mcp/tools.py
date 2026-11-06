@@ -59,7 +59,7 @@ def list_files(folder: str = ".", recursive: bool = True) -> dict:
         "root": str(root),
         "files": [
             {
-                "path": str(p.relative_to(root)),
+                "path": p.relative_to(root).as_posix(),
                 "kind": "project" if p.suffix == ".json" else "results",
             }
             for p in found
