@@ -8,10 +8,80 @@ of the Igor Pro AnisoSAS macros (theory: A. J. Allen, NIST 2001). Compared with 
 version it is faster, uses multiple cores, and has no fixed limit on the number of directions
 or populations.
 
-> **Status: beta (0.0.1b1).** The engine, data input, fitting, GUI, results files, command line,
+> **Status: beta.** The engine, data input, fitting, GUI, results files, command line,
 > MCP server and Bernardyn export are done and tested on synthetic data; it has not yet been
 > validated on real measurements, so expect changes. See
 > [PLAN.md](https://github.com/jilavsky/anisa/blob/main/PLAN.md) for the plan and progress.
+
+## Quick install (from PyPI)
+
+> **You need Python 3.10, 3.11, 3.12 or 3.13 (3.12 recommended). Newer versions (3.14, 3.15, ...)
+> do not work yet**, because some of the libraries Anisa depends on are not available for them.
+> If your Python is newer, install 3.12 from [python.org/downloads](https://www.python.org/downloads/)
+> (older releases are listed there too) alongside it; do not remove the newer one.
+
+Check which Python you have:
+
+```bash
+python --version        # macOS / Linux: try python3 --version.  Windows: try py --version
+```
+
+Then, in a terminal (Windows: *Command Prompt* or *PowerShell*), create a private environment for
+Anisa, install it with the GUI, and start it:
+
+**Windows**
+```bat
+py -3.12 -m venv anisa-env
+anisa-env\Scripts\activate
+python -m pip install --upgrade pip
+pip install "anisa[gui]"
+anisa-gui
+```
+
+**macOS / Linux**
+```bash
+python3.12 -m venv anisa-env
+source anisa-env/bin/activate
+python -m pip install --upgrade pip
+pip install "anisa[gui]"
+anisa-gui
+```
+
+(Use `3.10`, `3.11` or `3.13` in place of `3.12` if that is what you have installed.) The first
+line creates the environment, the second switches into it (your prompt then starts with
+`(anisa-env)`), the last starts the program. **Next time, only repeat the activate line and
+`anisa-gui`.** To update later: `pip install --upgrade "anisa[gui]"`.
+
+**Try it without your own data:** in the program choose *File → Create test system*, pick any
+system, and press **Fit**. It writes synthetic data with known parameters and shows the fit
+recovering them.
+
+What the install options give you:
+
+| Command | Installs |
+|---|---|
+| `pip install anisa` | calculation, command line `anisa`, no window (no Qt) |
+| `pip install "anisa[gui]"` | the above plus the graphical program `anisa-gui` |
+| `pip install "anisa[mcp]"` | the above plus the `anisa-mcp` server for AI agents |
+
+Problems? `pip install` says *No matching distribution* or *requires a different Python*: your
+Python is too new or too old (see the box above). `anisa-gui` is not found: the environment is
+not activated. Already using pyIrena or Bernardyn? Install Anisa into the same environment
+(`pip install "anisa[gui]"`); it does not change their Qt version.
+
+### Alternative: conda, from the GitHub source
+
+Download or clone [github.com/jilavsky/anisa](https://github.com/jilavsky/anisa), then in that
+folder:
+
+```bash
+conda env create -f environment.yml     # creates the "anisa" environment
+conda activate anisa
+anisa-gui
+```
+
+For developers: `pip install -e ".[gui,dev]"` in a checkout. The GUI uses PySide6 (never PyQt6).
+The repository also has ready-made synthetic data in [testdata/](testdata/).
 
 Anisa is part of the pyIrena family:
 - **[pyIrena](https://github.com/jilavsky/pyirena)** — data input (NXcanSAS HDF5 and ASCII) and
@@ -21,27 +91,10 @@ Anisa is part of the pyIrena family:
 
 All of them install into the same Python environment.
 
-## Installation
-
-Not on PyPI yet. From a source checkout:
-
-```bash
-conda env create -f environment.yml     # creates the "anisa" environment
-conda activate anisa
-```
-
-To add Anisa to an existing pyIrena or Bernardyn environment instead:
-
-```bash
-pip install -e ".[gui]"
-```
-
-Python 3.10–3.13. The GUI uses PySide6 (never PyQt6).
-
 ## Using the GUI
 
 ```bash
-anisa-gui                      # or: python -m anisa.gui
+anisa-gui                      # or: python -m anisa.gui (after activating the environment)
 ```
 
 1. *File → Create test system* writes a synthetic data set with known parameters (prolate,
