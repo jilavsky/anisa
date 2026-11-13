@@ -5,7 +5,11 @@ All notable changes to Anisa are documented here. Versions follow
 
 ## [Unreleased]
 
+## [0.0.1b2] - 2026-11-13
+
 ### Changed
+- `requires-python` is now `>=3.10,<3.14`: pip refuses Python 3.14 and newer with a clear message.
+  (Aida and some dependencies do not support them yet.)
 - README: step-by-step PyPI install for non-experts at the top, with the supported Python versions
   (3.10-3.13) stated prominently.
 
